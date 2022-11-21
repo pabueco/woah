@@ -271,8 +271,9 @@ const isShowingHistory = ref(false);
             <button
               class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <MugIcon class="w-5 h-5 text-gray-600" />
-              {{ newDrink.cup?.name || newDrink.amount }}
+              <MugIcon class="w-5 h-5" />
+              <div>{{ newDrink.cup?.name || newDrink.amount }}</div>
+              <ChevronDownIcon class="h-6 w-6 text-gray-400 ml-auto" />
             </button>
           </template>
 
@@ -285,8 +286,9 @@ const isShowingHistory = ref(false);
             <button
               class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <DropletIcon class="h-5 w-5 text-gray-600" />
-              {{ newDrink.content?.name }}
+              <DropletIcon class="h-5 w-5" />
+              <div>{{ newDrink.content?.name }}</div>
+              <ChevronDownIcon class="h-6 w-6 text-gray-400 ml-auto" />
             </button>
           </template>
         </Modal>
