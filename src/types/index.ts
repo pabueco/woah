@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export type DrinkData = {
   id: string;
   contentId: string;
@@ -17,7 +19,8 @@ export type Cup = {
   amount: number;
 };
 
-export type Drink = DrinkData & {
-  content: Content;
-  cup: Cup;
+export type Drink = Omit<DrinkData, "date"> & {
+  content?: Content;
+  cup?: Cup;
+  date: dayjs.Dayjs;
 };

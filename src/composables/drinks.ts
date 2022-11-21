@@ -1,8 +1,9 @@
 import { useStorage } from "@vueuse/core";
 import { computed } from "vue";
-import { Content, Cup, DrinkData } from "../types";
+import { Content, Cup, Drink, DrinkData } from "../types";
 import { uniqueId } from "lodash-es";
 import dayjs from "dayjs";
+import { DAILY_TARGET_AMOUNT } from "../constants";
 
 const rawDrinks = useStorage<DrinkData[]>("drinks", [], localStorage);
 
@@ -58,16 +59,37 @@ const CUPS: Cup[] = [
   { id: "6", name: "Large bottle", amount: 1500 },
 ];
 
+const enrichDrink = (drink: DrinkData): Drink => {
+  const content = CONTENTS.find((c) => c.id === drink.contentId);
+  const cup = CUPS.find((c) => c.id === drink.cupId);
+  return {
+    ...drink,
+    content,
+    cup,
+    date: dayjs(drink.date),
+  };
+};
+
 const drinksToday = computed(() => {
   return rawDrinks.value
     .filter((drink) => dayjs(drink.date).isToday())
-    .map((drink) => {
-      return {
-        ...drink,
-        content: CONTENTS.find((content) => content.id === drink.contentId)!,
-        cup: CUPS.find((cup) => cup.id === drink.cupId)!,
-      };
-    });
+    .map(enrichDrink);
+});
+
+const recentDrinks = computed(() => {
+  const unique: Drink[] = [];
+
+  for (const drink of rawDrinks.value) {
+    const existing = unique.find(
+      (u) => u.contentId === drink.contentId && u.amount === drink.amount
+    );
+
+    if (existing) continue;
+
+    unique.push({ ...enrichDrink(drink) });
+  }
+
+  return unique;
 });
 
 const cups = computed(() => {
@@ -78,17 +100,33 @@ const contents = computed(() => {
   return CONTENTS;
 });
 
-export function useDrinks() {
-  const addDrink = (drink: Partial<DrinkData>) => {
-    const cup = CUPS.find((c) => c.id === drink.cupId)!;
-    rawDrinks.value.push({
-      id: uniqueId(),
-      contentId: drink.contentId || CONTENTS[0].id,
-      cupId: drink.cupId,
-      amount: drink.amount || cup.amount || 0,
-      date: new Date().toISOString(),
-    });
-  };
+const amountToday = computed(() => {
+  return drinksToday.value.reduce((acc, drink) => acc + drink.amount, 0);
+});
 
-  return { drinks: drinksToday, addDrink, cups, contents };
+const percentageToday = computed(() => {
+  return Math.round((amountToday.value / DAILY_TARGET_AMOUNT) * 100);
+});
+
+const addDrink = (drink: Partial<DrinkData> | Drink) => {
+  const cup = CUPS.find((c) => c.id === drink.cupId)!;
+  rawDrinks.value.push({
+    id: uniqueId(),
+    contentId: drink.contentId || CONTENTS[0].id,
+    cupId: drink.cupId,
+    amount: drink.amount || cup.amount || 0,
+    date: new Date().toISOString(),
+  });
+};
+
+export function useDrinks() {
+  return {
+    drinksToday,
+    recentDrinks,
+    amountToday,
+    percentageToday,
+    addDrink,
+    cups,
+    contents,
+  };
 }
