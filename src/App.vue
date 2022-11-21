@@ -59,14 +59,14 @@ const recentDrinks = computed(() => {
 <template>
   <div class="container mx-auto max-w-xs py-10">
     <div
-      class="h-48 w-48 mx-auto mb-10 rounded-full border-2 border-black flex flex-col items-center justify-center relative overflow-hidden"
+      class="aspect-square w-60 mx-auto mb-10 rounded-full border-[7px] border-gray-100 ring ring-black flex flex-col items-center justify-center relative overflow-hidden"
     >
-      <div class="font-extrabold text-5xl flex items-center z-10">
+      <div class="font-black text-[3.3rem] flex items-center z-10 leading-none">
         <span>{{ percentageToday }}</span>
-        <span class="font-normal text-2xl ml-1">%</span>
+        <span class="font-normal ml-1">%</span>
       </div>
-      <div class="text-base flex items-center mt-2 z-10">
-        <div>{{ amountToday / 1000 }} l</div>
+      <div class="text-lg flex items-center mt-2 z-10">
+        <div>{{ amountToday / 1000 }}</div>
         <div class="mx-1">of</div>
         <div>{{ DAILY_TARGET_AMOUNT / 1000 }} l</div>
       </div>
@@ -89,46 +89,40 @@ const recentDrinks = computed(() => {
             class="absolute bottom-full translate-y-[1.1rem]"
           >
             <path
-              class="fill-blue-400"
+              class="fill-indigo-300"
               fill-opacity="1"
               d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,181.3C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
             ></path>
           </svg>
-          <div class="flex-1 bg-blue-400"></div>
+          <div class="flex-1 bg-indigo-300"></div>
         </div>
       </div>
     </div>
 
     <div class="flex gap-3">
       <div class="flex flex-col flex-1 gap-3">
-        <SelectModal>
+        <SelectModal
+          v-model="newDrinkData.cupId"
+          :options="cups"
+          hint-key="amount"
+        >
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-2xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
+              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
               <CupIcon class="w-6 h-6" />
               {{ newDrink.cup?.name || newDrink.amount }}
             </button>
           </template>
 
-          <div class="grid grid-cols-2 gap-4">
-            <button
-              v-for="cup in cups"
-              :key="cup.name"
-              @click="newDrinkData.cupId = cup.id"
-              class="aspect-square bg-blue-50 rounded-xl"
-            >
-              <div class="text-base font-medium leading-tight">
-                {{ cup.name }}
-              </div>
-              <div class="text-xs mt-2 text-gray-500">{{ cup.amount }} ml</div>
-            </button>
-          </div>
+          <template #option-hint="{ option }">
+            {{ option.amount }} ml
+          </template>
         </SelectModal>
-        <SelectModal>
+        <SelectModal v-model="newDrinkData.contentId" :options="contents">
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-2xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
+              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
               <DropletIcon class="h-6 w-6" />
               {{ newDrink.content?.name }}
@@ -138,16 +132,14 @@ const recentDrinks = computed(() => {
       </div>
       <button
         @click="addDrink(newDrinkData)"
-        class="rounded-2xl bg-black text-white w-14 grid place-items-center"
+        class="rounded-xl bg-black text-white w-14 grid place-items-center"
       >
-        <PlusIcon class="h-7 w-7" />
+        <PlusIcon class="h-7 w-7 stroke-[3px]" />
       </button>
     </div>
-    <h3 class="font-semibold text-lg border-b border-black py-2 mt-10">
-      Recent drinks
-    </h3>
+    <h3 class="font-bold mt-16 mb-2 text-lg">Recent Drinks</h3>
 
-    <div class="flex flex-col divide-y divide-black">
+    <div class="flex flex-col divide- divide-gray-300">
       <button
         v-for="drink in recentDrinks"
         :key="drink.id"

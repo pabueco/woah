@@ -21,7 +21,7 @@ const CONTENTS: Content[] = [
   },
   {
     id: "4",
-    name: "Milk",
+    name: "Multivitamin",
   },
   {
     id: "5",

@@ -1,6 +1,23 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 
+const props = defineProps<{
+  title?: string;
+  options: {
+    id: string;
+    name: string;
+    description?: string;
+    hint?: string;
+    [key: string]: any;
+  }[];
+  modelValue: any;
+  hintKey?: string;
+}>();
+
+const emit = defineEmits<{
+  (event: "update:modelValue", value: any): void;
+}>();
+
 const isVisible = ref(false);
 const triggerRef = ref<HTMLElement | null>(null);
 
@@ -14,13 +31,47 @@ const onTriggerClick = (e: MouseEvent) => {
   <div @click="onTriggerClick" class="flex-1" ref="triggerRef">
     <slot name="trigger" />
   </div>
-  <div v-show="isVisible" class="fixed inset-0 z-40 grid p-5 place-items-start">
-    <div class="absolute inset-0 bg-white/80" @click="isVisible = false"></div>
+  <div
+    v-show="isVisible"
+    class="fixed inset-0 z-40 px-5 flex items-center justify-center"
+  >
+    <div
+      class="absolute inset-0 bg-white/60 backdrop-blur-md"
+      @click="isVisible = false"
+    ></div>
     <div
       @click="isVisible = false"
-      class="w-full max-w-md bg-blue-100 rounded-md p-6 z-10 transition duration-500"
+      class="w-full max-w-md bg-black text-white py-4 z-10 transition duration-500 rounded-xl"
     >
-      <slot />
+      <slot>
+        <div class="flex flex-col">
+          <button
+            v-for="option in options"
+            :key="option.id"
+            @click="emit('update:modelValue', option.id)"
+            class="flex items-center justify-between py-3 px-8"
+            :class="{
+              'text-indigo-300': option.id === modelValue,
+            }"
+          >
+            <div class="font-medium">
+              {{ option.name }}
+            </div>
+            <div
+              v-if="
+                $slots['option-hint'] ||
+                option.hint ||
+                (hintKey && option[hintKey])
+              "
+              class="text-xs"
+            >
+              <slot name="option-hint" :option="option">
+                {{ option[hintKey!] || option.hint }}
+              </slot>
+            </div>
+          </button>
+        </div>
+      </slot>
     </div>
   </div>
 </template>
