@@ -2,12 +2,20 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useDeviceOrientation } from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
-import SelectModal from "./components/SelectModal.vue";
-import { CheckIcon, PlusIcon, CupIcon, DropletIcon } from "vue-tabler-icons";
+import Modal from "./components/Modal.vue";
+import {
+  CheckIcon,
+  PlusIcon,
+  CupIcon,
+  DropletIcon,
+  SettingsIcon,
+  MugIcon,
+} from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { Drink, DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
-import { PING_DURATION, DAILY_TARGET_AMOUNT } from "./constants";
+import { PING_DURATION } from "./constants";
+import { useSettings } from "./composables/settings";
 
 const deviceOrientation = reactive(useDeviceOrientation());
 const tiltAngle = computed(() => (deviceOrientation.gamma || 0) * -0.5);
@@ -22,6 +30,8 @@ const {
   contents,
   addDrink,
 } = useDrinks();
+
+const { settings } = useSettings();
 
 const pings = ref<string[]>([]);
 const wasPingJustAdded = ref(false);
@@ -40,8 +50,6 @@ const doPing = () => {
 };
 watch(drinksToday, (value, oldValue) => {
   if (value.length > oldValue.length) {
-    console.log("ping");
-
     doPing();
   }
 });
@@ -64,7 +72,48 @@ const newDrink = computed(() => {
 </script>
 
 <template>
-  <div class="container mx-auto max-w-xs py-10">
+  <div class="container mx-auto max-w-sm px-5 py-10">
+    <div class="fixed top-10 right-10">
+      <Modal title="Settings">
+        <template #trigger>
+          <button>
+            <SettingsIcon
+              class="w-6 h-6 text-black transition hover:text-black"
+            />
+          </button>
+        </template>
+
+        <div class="p-8">
+          <h4 class="font-extrabold text-2xl mb-5">Settings</h4>
+          <label
+            for="settings-dailyTargetAmount"
+            class="font-medium mb-2 inline-block"
+            >Daily Target Amount (ml)</label
+          >
+          <input
+            type="number"
+            v-model="settings.dailyTargetAmount"
+            class="border-white border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
+            id="settings-dailyTargetAmount"
+          />
+
+          <div class="mt-10">
+            <div class="text-xs text-gray-400">
+              Settings are applied and saved automatically.
+            </div>
+          </div>
+        </div>
+      </Modal>
+    </div>
+
+    <div class="flex justify-center">
+      <div
+        class="text-center mb-10 text-[1.65rem] font-black italic leading-none"
+      >
+        woah!
+      </div>
+    </div>
+
     <div class="relative w-60 mx-auto">
       <div
         class="aspect-square z-10 w-full mx-auto mb-10 rounded-full border-[7px] border-gray-100 ring ring-black flex flex-col items-center justify-center relative overflow-hidden transition"
@@ -81,7 +130,7 @@ const newDrink = computed(() => {
         <div class="text-lg flex items-center mt-2 z-10">
           <div>{{ amountToday / 1000 }}</div>
           <div class="mx-1">of</div>
-          <div>{{ DAILY_TARGET_AMOUNT / 1000 }} l</div>
+          <div>{{ settings.dailyTargetAmount / 1000 }} l</div>
         </div>
         <div
           class="absolute inset-0 w-full h-full top-full transition duration-300 origin-top"
@@ -121,18 +170,15 @@ const newDrink = computed(() => {
       ></div>
     </div>
 
+    <h3 class="font-extrabold mb-3 text-lg">What did you drink?</h3>
     <div class="flex gap-3">
       <div class="flex flex-col flex-1 gap-3">
-        <SelectModal
-          v-model="newDrinkData.cupId"
-          :options="cups"
-          hint-key="amount"
-        >
+        <Modal v-model="newDrinkData.cupId" :options="cups" hint-key="amount">
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium transition active:scale-95"
+              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <CupIcon class="w-6 h-6" />
+              <MugIcon class="w-6 h-6 text-gray-500" />
               {{ newDrink.cup?.name || newDrink.amount }}
             </button>
           </template>
@@ -140,28 +186,28 @@ const newDrink = computed(() => {
           <template #option-hint="{ option }">
             {{ option.amount }} ml
           </template>
-        </SelectModal>
-        <SelectModal v-model="newDrinkData.contentId" :options="contents">
+        </Modal>
+        <Modal v-model="newDrinkData.contentId" :options="contents">
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium transition active:scale-95"
+              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <DropletIcon class="h-6 w-6" />
+              <DropletIcon class="h-6 w-6 text-gray-500" />
               {{ newDrink.content?.name }}
             </button>
           </template>
-        </SelectModal>
+        </Modal>
       </div>
       <button
         @click="addDrink(newDrinkData)"
-        class="rounded-xl bg-black text-white w-14 grid place-items-center transition active:scale-90"
+        class="rounded-xl bg-black text-white w-14 flex flex-col items-center justify-center"
       >
-        <PlusIcon class="h-7 w-7 stroke-[3px]" />
+        <PlusIcon class="h-7 w-7 stroke-[2.5px]" />
       </button>
     </div>
-    <h3 class="font-bold mt-16 mb-2 text-lg">Recent Drinks</h3>
 
-    <div class="flex flex-col divide- divide-gray-300">
+    <h3 class="font-extrabold mt-10 mb-2 text-lg">Recent Drinks</h3>
+    <div class="flex flex-col">
       <button
         v-for="drink in recentDrinks"
         :key="drink.id"

@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { Content, Cup, Drink, DrinkData } from "../types";
 import { uniqueId } from "lodash-es";
 import dayjs from "dayjs";
-import { DAILY_TARGET_AMOUNT } from "../constants";
+import { useSettings } from "./settings";
 
 const rawDrinks = useStorage<DrinkData[]>("drinks", [], localStorage);
 
@@ -51,12 +51,12 @@ const CONTENTS: Content[] = [
 ];
 
 const CUPS: Cup[] = [
-  { id: "1", name: "Small cup", amount: 200 },
-  { id: "2", name: "Normal cup", amount: 300 },
-  { id: "3", name: "Large cup", amount: 400 },
-  { id: "4", name: "Small bottle", amount: 500 },
-  { id: "5", name: "Normal bottle", amount: 1000 },
-  { id: "6", name: "Large bottle", amount: 1500 },
+  { id: "1", name: "Small Cup", amount: 200 },
+  { id: "2", name: "Normal Cup", amount: 300 },
+  { id: "3", name: "Large Cup", amount: 400 },
+  { id: "4", name: "Small Bottle", amount: 500 },
+  { id: "5", name: "Normal Bottle", amount: 1000 },
+  { id: "6", name: "Large Bottle", amount: 1500 },
 ];
 
 const enrichDrink = (drink: DrinkData): Drink => {
@@ -104,10 +104,6 @@ const amountToday = computed(() => {
   return drinksToday.value.reduce((acc, drink) => acc + drink.amount, 0);
 });
 
-const percentageToday = computed(() => {
-  return Math.round((amountToday.value / DAILY_TARGET_AMOUNT) * 100);
-});
-
 const addDrink = (drink: Partial<DrinkData> | Drink) => {
   const cup = CUPS.find((c) => c.id === drink.cupId)!;
   rawDrinks.value.push({
@@ -120,6 +116,14 @@ const addDrink = (drink: Partial<DrinkData> | Drink) => {
 };
 
 export function useDrinks() {
+  const { settings } = useSettings();
+
+  const percentageToday = computed(() => {
+    return Math.round(
+      (amountToday.value / settings.value.dailyTargetAmount) * 100
+    );
+  });
+
   return {
     drinksToday,
     recentDrinks,

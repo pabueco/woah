@@ -11,7 +11,7 @@ module.exports = {
       },
 
       colors: {
-        gray: colors.stone,
+        gray: colors.zinc,
       },
 
       backgroundImage: {
