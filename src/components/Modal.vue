@@ -41,6 +41,12 @@ const handleOptionClick = (option: any) => {
 onKeyStroke("Escape", () => {
   isVisible.value = false;
 });
+
+defineExpose({
+  close: () => {
+    isVisible.value = false;
+  },
+});
 </script>
 
 <template>
@@ -72,7 +78,7 @@ onKeyStroke("Escape", () => {
                 v-for="option in options"
                 :key="option.id"
                 @click="handleOptionClick(option)"
-                class="flex items-center justify-between py-3 px-8 hover:text-indigo-200"
+                class="flex items-center justify-between py-3 px-8 hover:text-indigo-200 transition"
                 :class="{
                   'text-indigo-300': option.id === modelValue,
                 }"

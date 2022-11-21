@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from "vue";
-import { useDeviceOrientation } from "@vueuse/core";
+import {
+  TransitionPresets,
+  useDeviceOrientation,
+  useTransition,
+} from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
 import Modal from "./components/Modal.vue";
 import {
@@ -10,12 +14,20 @@ import {
   DropletIcon,
   SettingsIcon,
   MugIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  TrashIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { Drink, DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
 import { PING_DURATION } from "./constants";
 import { useSettings } from "./composables/settings";
+import confetti from "canvas-confetti";
+import { UseTimeAgo } from "@vueuse/components";
+
+const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
 
 const deviceOrientation = reactive(useDeviceOrientation());
 const tiltAngle = computed(() => (deviceOrientation.gamma || 0) * -0.5);
@@ -29,9 +41,17 @@ const {
   cups,
   contents,
   addDrink,
+  date,
+  setDate,
+  onAddDrink,
+  onDailGoalReached,
+  clearDrinks,
+  deleteDrink,
 } = useDrinks();
 
 const { settings } = useSettings();
+
+const bowlRef = ref<HTMLElement>();
 
 const pings = ref<string[]>([]);
 const wasPingJustAdded = ref(false);
@@ -48,10 +68,23 @@ const doPing = () => {
     pings.value.splice(pings.value.indexOf(id), 1);
   }, PING_DURATION);
 };
-watch(drinksToday, (value, oldValue) => {
-  if (value.length > oldValue.length) {
-    doPing();
-  }
+
+onAddDrink.on(() => {
+  doPing();
+});
+
+onDailGoalReached.on(() => {
+  const rect = bowlRef.value?.getBoundingClientRect()!;
+  confetti({
+    particleCount: 420,
+    spread: 360,
+    startVelocity: 36,
+    origin: {
+      x: (rect.x + rect.width / 2) / window.innerWidth,
+      y: (rect.y + rect.height / 2) / window.innerHeight,
+    },
+    colors: ["#c7d2fe", "#a5b4fc", "#818cf8", "#6366f1"],
+  });
 });
 
 const newDrinkData = ref<Partial<DrinkData>>({
@@ -69,12 +102,26 @@ const newDrink = computed(() => {
     cup: cups.value.find((cup) => cup.id === newDrinkData.value.cupId),
   };
 });
+
+const transitionedPercentage = useTransition(percentageToday, {
+  duration: 500,
+  transition: TransitionPresets.easeInOutSine,
+});
+
+const handleDeleteEverything = () => {
+  if (confirm("Are you sure you want to delete everything?")) {
+    clearDrinks();
+    settingsModal.value?.close();
+  }
+};
+
+const isShowingHistory = ref(false);
 </script>
 
 <template>
   <div class="container mx-auto max-w-sm px-5 py-10">
     <div class="fixed top-10 right-10">
-      <Modal title="Settings">
+      <Modal title="Settings" ref="settingsModal">
         <template #trigger>
           <button>
             <SettingsIcon
@@ -83,24 +130,37 @@ const newDrink = computed(() => {
           </button>
         </template>
 
-        <div class="p-8">
-          <h4 class="font-extrabold text-2xl mb-5">Settings</h4>
-          <label
-            for="settings-dailyTargetAmount"
-            class="font-medium mb-2 inline-block"
-            >Daily Target Amount (ml)</label
-          >
-          <input
-            type="number"
-            v-model="settings.dailyTargetAmount"
-            class="border-white border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
-            id="settings-dailyTargetAmount"
-          />
+        <div class="p-8 space-y-5">
+          <h4 class="font-extrabold text-2xl">Settings</h4>
 
-          <div class="mt-10">
+          <div>
+            <label
+              for="settings-dailyTargetAmount"
+              class="font-medium mb-2 inline-block"
+              >Daily Target Amount (ml)</label
+            >
+            <input
+              type="number"
+              v-model="settings.dailyTargetAmount"
+              class="border-white border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
+              id="settings-dailyTargetAmount"
+            />
+          </div>
+
+          <div class="">
             <div class="text-xs text-gray-400">
               Settings are applied and saved automatically.
             </div>
+          </div>
+
+          <div class="!mt-10">
+            <h4 class="font-extrabold text-lg mb-3">Danger Zone</h4>
+            <button
+              @click="handleDeleteEverything"
+              class="rounded-xl bg-red-500 px-4 py-2.5 font-semibold text-sm hover:bg-red-400 transition"
+            >
+              Delete everything
+            </button>
           </div>
         </div>
       </Modal>
@@ -114,60 +174,93 @@ const newDrink = computed(() => {
       </div>
     </div>
 
-    <div class="relative w-60 mx-auto">
-      <div
-        class="aspect-square z-10 w-full mx-auto mb-10 rounded-full border-[7px] border-gray-100 ring ring-black flex flex-col items-center justify-center relative overflow-hidden transition"
-        :class="{
-          'scale-105': wasPingJustAdded,
-        }"
+    <div class="flex items-center mb-10">
+      <button
+        class="order-first px-2 py-5"
+        @click="setDate(date.subtract(1, 'day'))"
       >
+        <ChevronLeftIcon
+          class="w-6 h-6 text-black transition hover:text-black stroke-[3px]"
+        />
+      </button>
+      <button
+        class="order-last px-2 py-5 [&:disabled]:opacity-25"
+        @click="setDate(date.add(1, 'day'))"
+        :disabled="date.isToday()"
+      >
+        <ChevronRightIcon
+          class="w-6 h-6 text-black transition hover:text-black stroke-[3px]"
+        />
+      </button>
+
+      <div ref="bowlRef" class="relative w-60 mx-auto shrink-0">
+        <Transition name="date-badge">
+          <div
+            v-if="!date.isToday()"
+            class="text-center absolute -translate-y-1/2 left-1/2 top-1 -translate-x-1/2 bg-black rounded-full text-white px-4 z-20 text-xs py-1.5 leading-none origin-center flex"
+          >
+            {{ date.isToday() ? "Today" : date.format("ddd, DD. MMM") }}
+          </div>
+        </Transition>
         <div
-          class="font-black text-[3.3rem] flex items-center z-10 leading-none"
-        >
-          <span>{{ percentageToday }}</span>
-          <span class="font-normal ml-1">%</span>
-        </div>
-        <div class="text-lg flex items-center mt-2 z-10">
-          <div>{{ amountToday / 1000 }}</div>
-          <div class="mx-1">of</div>
-          <div>{{ settings.dailyTargetAmount / 1000 }} l</div>
-        </div>
-        <div
-          class="absolute inset-0 w-full h-full top-full transition duration-300 origin-top"
-          :style="{
-            transform: `translateY(-${Math.min(percentageToday - 5, 100)}%)`,
+          class="aspect-square z-10 w-full mx-auto rounded-full border-[7px] border-gray-100 ring ring-black flex flex-col items-center justify-center relative overflow-hidden transition"
+          :class="{
+            'scale-105': wasPingJustAdded,
           }"
         >
           <div
-            class="origin-top absolute inset-y-0 -inset-x-10 h-full flex flex-col"
+            class="font-black text-[3.3rem] flex items-center z-10 leading-none"
+          >
+            <span>{{ Math.floor(transitionedPercentage) }}</span>
+            <span class="font-normal ml-1">%</span>
+          </div>
+          <div class="text-base flex items-center mt-1 z-10">
+            <div>{{ Number(amountToday / 1000).toFixed(1) }}</div>
+            <div class="mx-1">of</div>
+            <div>
+              {{ Number(settings.dailyTargetAmount / 1000).toFixed(1) }} l
+            </div>
+          </div>
+          <div
+            class="absolute inset-0 w-full h-full top-full transition duration-500 ease-in-out origin-top"
             :style="{
-              transform: `rotate(${waterTilt}deg)`,
+              transform: `translateY(-${Math.min(
+                percentageToday ? percentageToday - 5 : 0,
+                100
+              )}%)`,
             }"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 1440 320"
-              class="absolute bottom-full translate-y-[1.1rem]"
+            <div
+              class="origin-top absolute inset-y-0 -inset-x-10 h-full flex flex-col"
+              :style="{
+                transform: `rotate(${waterTilt}deg)`,
+              }"
             >
-              <path
-                class="fill-indigo-300"
-                fill-opacity="1"
-                d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,181.3C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-              ></path>
-            </svg>
-            <div class="flex-1 bg-indigo-300"></div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1440 320"
+                class="absolute bottom-full translate-y-[1.1rem]"
+              >
+                <path
+                  class="fill-indigo-300"
+                  fill-opacity="1"
+                  d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,181.3C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                ></path>
+              </svg>
+              <div class="flex-1 bg-indigo-300"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div
-        v-for="(ping, index) in pings"
-        :key="ping"
-        class="absolute inset-0 bg-indigo-400 rounded-full pointer-events-none"
-        :style="{
-          animation: `custom-ping ${PING_DURATION}ms cubic-bezier(0, 0, 0.2, 1)`,
-        }"
-      ></div>
+        <div
+          v-for="(ping, index) in pings"
+          :key="ping"
+          class="absolute inset-0 bg-indigo-400 rounded-full pointer-events-none"
+          :style="{
+            animation: `custom-ping ${PING_DURATION}ms cubic-bezier(0, 0, 0.2, 1)`,
+          }"
+        ></div>
+      </div>
     </div>
 
     <h3 class="font-extrabold mb-3 text-lg">What did you drink?</h3>
@@ -178,7 +271,7 @@ const newDrink = computed(() => {
             <button
               class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <MugIcon class="w-6 h-6 text-gray-500" />
+              <MugIcon class="w-5 h-5 text-gray-600" />
               {{ newDrink.cup?.name || newDrink.amount }}
             </button>
           </template>
@@ -192,7 +285,7 @@ const newDrink = computed(() => {
             <button
               class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
-              <DropletIcon class="h-6 w-6 text-gray-500" />
+              <DropletIcon class="h-5 w-5 text-gray-600" />
               {{ newDrink.content?.name }}
             </button>
           </template>
@@ -206,13 +299,16 @@ const newDrink = computed(() => {
       </button>
     </div>
 
-    <h3 class="font-extrabold mt-10 mb-2 text-lg">Recent Drinks</h3>
+    <h3 class="font-extrabold mt-10 mb-2 text-lg">Recent drinks</h3>
     <div class="flex flex-col">
+      <div v-if="!recentDrinks.length">
+        <p class="text-gray-500 text-sm">Drink something, dude!</p>
+      </div>
       <button
         v-for="drink in recentDrinks"
         :key="drink.id"
         @click="addDrink(drink)"
-        class="py-2 flex"
+        class="py-2 flex hover:text-indigo-500"
       >
         <div class="text-base leading-tight flex items-center space-x-1">
           <div v-if="drink.cup">{{ drink.cup?.name }}</div>
@@ -222,6 +318,52 @@ const newDrink = computed(() => {
           <div>{{ drink.content?.name }}</div>
         </div>
       </button>
+    </div>
+
+    <button
+      @click="isShowingHistory = !isShowingHistory"
+      class="flex w-full items-center justify-between mt-10 mb-2"
+    >
+      <h3 class="font-extrabold text-lg">Drinks you had today</h3>
+      <div>
+        <ChevronDownIcon class="h-5 w-5 stroke-[3px]" />
+      </div>
+    </button>
+    <div v-if="isShowingHistory" class="flex flex-col">
+      <div v-if="!recentDrinks.length">
+        <p class="text-gray-500 text-sm">Are you kidding me?</p>
+      </div>
+      <div
+        v-for="drink in [...drinksToday].reverse()"
+        :key="drink.id"
+        class="py-2 text-left flex items-center justify-between group"
+      >
+        <div>
+          <button
+            @click="addDrink(drink)"
+            class="text-base leading-tight flex items-center space-x-1 hover:text-indigo-500"
+          >
+            <div v-if="drink.cup">{{ drink.cup?.name }}</div>
+            <div v-else>{{ drink.amount }} ml</div>
+
+            <div class="font-normal">of</div>
+            <div>{{ drink.content?.name }}</div>
+          </button>
+          <div class="text-xs mt-0.5 text-gray-500">
+            <UseTimeAgo v-slot="{ timeAgo }" :time="drink.date.toDate()">
+              {{ timeAgo }}
+            </UseTimeAgo>
+          </div>
+        </div>
+
+        <div
+          class="flex items-center gap-1 opacity-0 transition -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
+        >
+          <button @click="deleteDrink(drink)" class="hover:text-red-500">
+            <TrashIcon class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -233,5 +375,20 @@ const newDrink = computed(() => {
     transform: scale(2);
     opacity: 0;
   }
+}
+
+button {
+  @apply transition active:translate-y-0.5;
+}
+
+.date-badge-enter-active,
+.date-badge-leave-active {
+  transition: all 0.15s;
+}
+
+.date-badge-enter-from,
+.date-badge-leave-to {
+  opacity: 0;
+  @apply scale-75 -translate-y-3;
 }
 </style>

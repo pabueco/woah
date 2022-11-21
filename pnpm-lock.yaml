@@ -1,12 +1,15 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@types/canvas-confetti': ^1.6.0
   '@types/lodash-es': ^4.17.6
   '@vitejs/plugin-basic-ssl': ^0.1.2
   '@vitejs/plugin-vue': ^3.2.0
+  '@vueuse/components': ^9.5.0
   '@vueuse/core': ^9.5.0
   '@vueuse/math': ^9.5.0
   autoprefixer: ^10.4.13
+  canvas-confetti: ^1.6.0
   dayjs: ^1.11.6
   lodash-es: ^4.17.21
   postcss: ^8.4.19
@@ -19,14 +22,17 @@ specifiers:
 
 dependencies:
   '@vitejs/plugin-basic-ssl': 0.1.2_vite@3.2.4
+  '@vueuse/components': 9.5.0_vue@3.2.45
   '@vueuse/core': 9.5.0_vue@3.2.45
   '@vueuse/math': 9.5.0_vue@3.2.45
+  canvas-confetti: 1.6.0
   dayjs: 1.11.6
   lodash-es: 4.17.21
   vue: 3.2.45
   vue-tabler-icons: 2.16.0
 
 devDependencies:
+  '@types/canvas-confetti': 1.6.0
   '@types/lodash-es': 4.17.6
   '@vitejs/plugin-vue': 3.2.0_vite@3.2.4+vue@3.2.45
   autoprefixer: 10.4.13_postcss@8.4.19
@@ -96,6 +102,10 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.13.0
+    dev: true
+
+  /@types/canvas-confetti/1.6.0:
+    resolution: {integrity: sha512-Yq6rIccwcco0TLD5SMUrIM7Fk7Fe/C0jmNRxJJCLtAF6gebDkPuUjK5EHedxecm69Pi/aA+It39Ux4OHmFhjRw==}
     dev: true
 
   /@types/lodash-es/4.17.6:
@@ -245,6 +255,17 @@ packages:
   /@vue/shared/3.2.45:
     resolution: {integrity: sha512-Ewzq5Yhimg7pSztDV+RH1UDKBzmtqieXQlpTVm2AwraoRL/Rks96mvd8Vgi7Lj+h+TH8dv7mXD3FRZR3TUvbSg==}
 
+  /@vueuse/components/9.5.0_vue@3.2.45:
+    resolution: {integrity: sha512-lHO3yWG5j+shmOqUhs8toMLdTaLEjSyFlsNJ2jamkQiDNn8+x1tQmAZIEQIdXtBceenDzItBu1kZswMxlojZiw==}
+    dependencies:
+      '@vueuse/core': 9.5.0_vue@3.2.45
+      '@vueuse/shared': 9.5.0_vue@3.2.45
+      vue-demi: 0.13.11_vue@3.2.45
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
+    dev: false
+
   /@vueuse/core/9.5.0_vue@3.2.45:
     resolution: {integrity: sha512-6GsWBsJHEb3sYw15mbLrcbslAVY45pkzjJYTKYKCXv88z7srAF0VEW0q+oXKsl58tCbqooplInahXFg8Yo1m4w==}
     dependencies:
@@ -368,6 +389,10 @@ packages:
   /caniuse-lite/1.0.30001431:
     resolution: {integrity: sha512-zBUoFU0ZcxpvSt9IU66dXVT/3ctO1cy4y9cscs1szkPlcWb6pasYM144GqrUygUbT+k7cmUCW61cvskjcv0enQ==}
     dev: true
+
+  /canvas-confetti/1.6.0:
+    resolution: {integrity: sha512-ej+w/m8Jzpv9Z7W7uJZer14Ke8P2ogsjg4ZMGIuq4iqUOqY2Jq8BNW42iGmNfRwREaaEfFIczLuZZiEVSYNHAA==}
+    dev: false
 
   /chokidar/3.5.3:
     resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}

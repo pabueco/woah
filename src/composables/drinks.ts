@@ -1,9 +1,11 @@
-import { useStorage } from "@vueuse/core";
-import { computed } from "vue";
+import { useEventBus, useStorage } from "@vueuse/core";
+import { computed, ref } from "vue";
 import { Content, Cup, Drink, DrinkData } from "../types";
 import { uniqueId } from "lodash-es";
 import dayjs from "dayjs";
 import { useSettings } from "./settings";
+
+const date = ref(dayjs());
 
 const rawDrinks = useStorage<DrinkData[]>("drinks", [], localStorage);
 
@@ -29,23 +31,27 @@ const CONTENTS: Content[] = [
     name: "Juice",
   },
   {
-    id: "6",
-    name: "Soda",
+    id: "5",
+    name: "Ice Tea",
   },
   {
     id: "7",
-    name: "Beer",
+    name: "Soft Drink",
   },
   {
     id: "8",
-    name: "Wine",
+    name: "Beer",
   },
   {
     id: "9",
-    name: "Cocktail",
+    name: "Wine",
   },
   {
     id: "10",
+    name: "Cocktail",
+  },
+  {
+    id: "11",
     name: "Other",
   },
 ];
@@ -72,7 +78,11 @@ const enrichDrink = (drink: DrinkData): Drink => {
 
 const drinksToday = computed(() => {
   return rawDrinks.value
-    .filter((drink) => dayjs(drink.date).isToday())
+    .filter(
+      (drink) =>
+        dayjs(drink.date).format("YYYY-MM-DD") ===
+        date.value.format("YYYY-MM-DD")
+    )
     .map(enrichDrink);
 });
 
@@ -86,7 +96,7 @@ const recentDrinks = computed(() => {
 
     if (existing) continue;
 
-    unique.push({ ...enrichDrink(drink) });
+    unique.unshift({ ...enrichDrink(drink) });
   }
 
   return unique;
@@ -104,16 +114,16 @@ const amountToday = computed(() => {
   return drinksToday.value.reduce((acc, drink) => acc + drink.amount, 0);
 });
 
-const addDrink = (drink: Partial<DrinkData> | Drink) => {
-  const cup = CUPS.find((c) => c.id === drink.cupId)!;
-  rawDrinks.value.push({
-    id: uniqueId(),
-    contentId: drink.contentId || CONTENTS[0].id,
-    cupId: drink.cupId,
-    amount: drink.amount || cup.amount || 0,
-    date: new Date().toISOString(),
-  });
+const setDate = (newDate: dayjs.Dayjs) => {
+  date.value = newDate;
 };
+
+const clearDrinks = () => {
+  rawDrinks.value = [];
+};
+
+const onAddDrink = useEventBus<Drink>("add-drink");
+const onDailGoalReached = useEventBus("daily-goal-reached");
 
 export function useDrinks() {
   const { settings } = useSettings();
@@ -124,6 +134,35 @@ export function useDrinks() {
     );
   });
 
+  const addDrink = (drink: Partial<DrinkData> | Drink) => {
+    const amountBefore = amountToday.value;
+
+    const cup = CUPS.find((c) => c.id === drink.cupId)!;
+    const newDrink = {
+      id: uniqueId(),
+      contentId: drink.contentId || CONTENTS[0].id,
+      cupId: drink.cupId,
+      amount: drink.amount || cup.amount || 0,
+      date: date.value.toISOString(),
+    };
+    rawDrinks.value.push(newDrink);
+    onAddDrink.emit(enrichDrink(newDrink));
+
+    if (
+      amountBefore < settings.value.dailyTargetAmount &&
+      amountToday.value >= settings.value.dailyTargetAmount
+    ) {
+      onDailGoalReached.emit();
+    }
+  };
+
+  const deleteDrink = (drink: Drink) => {
+    rawDrinks.value.splice(
+      rawDrinks.value.findIndex((d) => d.id === drink.id),
+      1
+    );
+  };
+
   return {
     drinksToday,
     recentDrinks,
@@ -132,5 +171,14 @@ export function useDrinks() {
     addDrink,
     cups,
     contents,
+
+    deleteDrink,
+    clearDrinks,
+
+    onAddDrink,
+    onDailGoalReached,
+
+    date,
+    setDate,
   };
 }

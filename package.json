@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@vitejs/plugin-basic-ssl": "^0.1.2",
+    "@vueuse/components": "^9.5.0",
     "@vueuse/core": "^9.5.0",
     "@vueuse/math": "^9.5.0",
+    "canvas-confetti": "^1.6.0",
     "dayjs": "^1.11.6",
     "lodash-es": "^4.17.21",
     "vue": "^3.2.41",
     "vue-tabler-icons": "^2.16.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.6.0",
     "@types/lodash-es": "^4.17.6",
     "@vitejs/plugin-vue": "^3.2.0",
     "autoprefixer": "^10.4.13",
