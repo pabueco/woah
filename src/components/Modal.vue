@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onKeyStroke } from "@vueuse/core";
+import { onKeyStroke, useScrollLock } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
 import BaseInput from "./BaseInput.vue";
 
@@ -28,8 +28,11 @@ const triggerRef = ref<HTMLElement | null>(null);
 
 const isShowingContent = ref(false);
 
+const scrollLock = useScrollLock(document.body);
+
 watch(isVisible, (value) => {
   isShowingContent.value = true;
+  scrollLock.value = value;
 });
 
 const onTriggerClick = (e: MouseEvent) => {
