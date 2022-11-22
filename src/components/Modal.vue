@@ -79,7 +79,7 @@ const handleCreate = () => {
           @click="isVisible = false"
         ></div>
         <div
-          class="content w-full max-h-[90vh] overflow-y-auto max-w-md bg-black text-white z-10 transition duration-500 rounded-xl"
+          class="content w-full max-h-[80vh] overflow-y-auto max-w-md bg-black text-white z-10 transition duration-500 rounded-xl"
           :class="[
             origin || 'origin-center',
             {
