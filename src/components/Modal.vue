@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onKeyStroke } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
+import BaseInput from "./BaseInput.vue";
 
 const props = defineProps<{
   title?: string;
@@ -14,10 +15,12 @@ const props = defineProps<{
   modelValue?: any;
   hintKey?: string;
   origin?: string;
+  creatable?: boolean;
 }>();
 
 const emit = defineEmits<{
   (event: "update:modelValue", value: any): void;
+  (event: "create", value: string): void;
 }>();
 
 const isVisible = ref(false);
@@ -47,6 +50,15 @@ defineExpose({
     isVisible.value = false;
   },
 });
+
+const createData = ref({
+  name: "",
+});
+
+const handleCreate = () => {
+  emit("create", createData.value.name);
+  createData.value.name = "";
+};
 </script>
 
 <template>
@@ -64,7 +76,7 @@ defineExpose({
           @click="isVisible = false"
         ></div>
         <div
-          class="content w-full max-w-md bg-black text-white z-10 transition duration-500 rounded-xl"
+          class="content w-full max-h-[90vh] overflow-y-auto max-w-md bg-black text-white z-10 transition duration-500 rounded-xl"
           :class="[
             origin || 'origin-center',
             {
@@ -99,6 +111,17 @@ defineExpose({
                   </slot>
                 </div>
               </button>
+
+              <div v-if="creatable" class="px-8 mb-4 mt-8">
+                <BaseInput
+                  label="Create your own"
+                  @keyup.enter.exact="handleCreate"
+                />
+              </div>
+
+              <div v-if="$slots.bottom" class="px-8 mb-4 mt-8">
+                <slot name="bottom" />
+              </div>
             </div>
           </slot>
         </div>

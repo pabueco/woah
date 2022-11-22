@@ -16,6 +16,7 @@
     "canvas-confetti": "^1.6.0",
     "dayjs": "^1.11.6",
     "lodash-es": "^4.17.21",
+    "nanoid": "^4.0.0",
     "vue": "^3.2.41",
     "vue-tabler-icons": "^2.16.0"
   },

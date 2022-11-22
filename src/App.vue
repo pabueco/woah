@@ -8,9 +8,7 @@ import {
 import { useClamp } from "@vueuse/math";
 import Modal from "./components/Modal.vue";
 import {
-  CheckIcon,
   PlusIcon,
-  CupIcon,
   DropletIcon,
   SettingsIcon,
   MugIcon,
@@ -18,14 +16,18 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   TrashIcon,
+  CornerDownLeftIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
+import { useCups } from "./composables/cups";
+import { useContents } from "./composables/contents";
 import { Drink, DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
 import { PING_DURATION } from "./constants";
 import { useSettings } from "./composables/settings";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
+import BaseInput from "./components/BaseInput.vue";
 
 const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
 
@@ -38,8 +40,6 @@ const {
   recentDrinks,
   amountToday,
   percentageToday,
-  cups,
-  contents,
   addDrink,
   date,
   setDate,
@@ -50,6 +50,8 @@ const {
 } = useDrinks();
 
 const { settings } = useSettings();
+const { cups, addCup, clearCups } = useCups();
+const { contents, addContent, clearContents } = useContents();
 
 const bowlRef = ref<HTMLElement>();
 
@@ -111,11 +113,37 @@ const transitionedPercentage = useTransition(percentageToday, {
 const handleDeleteEverything = () => {
   if (confirm("Are you sure you want to delete everything?")) {
     clearDrinks();
+    clearCups();
+    clearContents();
     settingsModal.value?.close();
   }
 };
 
 const isShowingHistory = ref(false);
+
+const newCupData = ref({
+  name: "",
+  amount: undefined as number | undefined,
+});
+const handleCreateCup = () => {
+  if (!newCupData.value.name || !newCupData.value.amount) return;
+  addCup(newCupData.value as any);
+  newCupData.value = {
+    name: "",
+    amount: undefined,
+  };
+};
+
+const newContentData = ref({
+  name: "",
+});
+const handleCreateContent = () => {
+  if (!newContentData.value.name) return;
+  addContent(newContentData.value as any);
+  newContentData.value = {
+    name: "",
+  };
+};
 </script>
 
 <template>
@@ -134,16 +162,10 @@ const isShowingHistory = ref(false);
           <h4 class="font-extrabold text-2xl">Settings</h4>
 
           <div>
-            <label
-              for="settings-dailyTargetAmount"
-              class="font-medium mb-2 inline-block"
-              >Daily Target Amount (ml)</label
-            >
-            <input
-              type="number"
+            <BaseInput
+              label="Daily Target Amount (ml)"
               v-model="settings.dailyTargetAmount"
-              class="border-white border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
-              id="settings-dailyTargetAmount"
+              type="number"
             />
           </div>
 
@@ -280,6 +302,37 @@ const isShowingHistory = ref(false);
           <template #option-hint="{ option }">
             {{ option.amount }} ml
           </template>
+
+          <template #bottom>
+            <h4 class="font-bold text-lg mb-2">Create your own</h4>
+            <div class="flex gap-4">
+              <div
+                class="border-2 border-white rounded-xl w-full flex items-center pr-3 focus-within:border-indigo-400"
+              >
+                <input
+                  v-model="newCupData.name"
+                  type="text"
+                  placeholder="Name"
+                  class="bg-transparent px-3.5 py-2.5 outline-none flex-1 min-w-0"
+                  @keyup.enter.exact="handleCreateCup"
+                />
+                <input
+                  v-model="newCupData.amount"
+                  type="text"
+                  placeholder="300"
+                  class="bg-transparent pl-3.5 pr-2 py-2.5 outline-none w-32 text-right"
+                  @keyup.enter.exact="handleCreateCup"
+                />
+                <div>ml</div>
+                <button
+                  class="rounded-md bg-white p-0.5 ml-6"
+                  @click="handleCreateCup"
+                >
+                  <CornerDownLeftIcon class="w-5 h-5 text-black" />
+                </button>
+              </div>
+            </div>
+          </template>
         </Modal>
         <Modal v-model="newDrinkData.contentId" :options="contents">
           <template #trigger>
@@ -290,6 +343,29 @@ const isShowingHistory = ref(false);
               <div>{{ newDrink.content?.name }}</div>
               <ChevronDownIcon class="h-6 w-6 text-gray-400 ml-auto" />
             </button>
+          </template>
+
+          <template #bottom>
+            <h4 class="font-bold text-lg mb-2">Create your own</h4>
+            <div class="flex gap-4">
+              <div
+                class="border-2 border-white rounded-xl w-full flex items-center pr-3 focus-within:border-indigo-400"
+              >
+                <input
+                  v-model="newContentData.name"
+                  type="text"
+                  placeholder="Name"
+                  class="bg-transparent px-3.5 py-2.5 outline-none flex-1 min-w-0"
+                  @keyup.enter.exact="handleCreateContent"
+                />
+                <button
+                  class="rounded-md bg-white p-0.5 ml-6"
+                  @click="handleCreateContent"
+                >
+                  <CornerDownLeftIcon class="w-5 h-5 text-black" />
+                </button>
+              </div>
+            </div>
           </template>
         </Modal>
       </div>
@@ -328,7 +404,12 @@ const isShowingHistory = ref(false);
     >
       <h3 class="font-extrabold text-lg">Drinks you had today</h3>
       <div>
-        <ChevronDownIcon class="h-5 w-5 stroke-[3px]" />
+        <ChevronDownIcon
+          class="h-5 w-5 stroke-[3px] transition"
+          :class="{
+            'rotate-180': isShowingHistory,
+          }"
+        />
       </div>
     </button>
     <div v-if="isShowingHistory" class="flex flex-col">
