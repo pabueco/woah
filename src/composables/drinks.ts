@@ -6,6 +6,7 @@ import { useSettings } from "./settings";
 import { useCups } from "./cups";
 import { useContents } from "./contents";
 import { nanoid } from "nanoid";
+import { DAY_END, DAY_START } from "../constants";
 
 const date = ref(dayjs());
 
@@ -103,6 +104,29 @@ export function useDrinks() {
     );
   };
 
+  const getExpectedAmountNow = () => {
+    const now = dayjs();
+    const start = dayjs().hour(DAY_START);
+    const end = dayjs().hour(DAY_END);
+
+    if (now.isBefore(start)) return 0;
+    if (now.isAfter(end)) return settings.value.dailyTargetAmount;
+
+    const duration = end.diff(start);
+    const elapsed = now.diff(start);
+    const expected = (elapsed / duration) * settings.value.dailyTargetAmount;
+
+    return expected;
+  };
+
+  const getExpectedAmountDifference = () => {
+    return getExpectedAmountNow() - amountToday.value;
+  };
+
+  const checkIsDehydrated = () => {
+    return amountToday.value < getExpectedAmountNow();
+  };
+
   return {
     drinksToday,
     recentDrinks,
@@ -119,5 +143,8 @@ export function useDrinks() {
 
     date,
     setDate,
+
+    checkIsDehydrated,
+    getExpectedAmountDifference,
   };
 }

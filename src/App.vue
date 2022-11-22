@@ -3,7 +3,9 @@ import { computed, nextTick, reactive, ref, watch } from "vue";
 import {
   TransitionPresets,
   useDeviceOrientation,
+  useIntervalFn,
   useTransition,
+  useWebNotification,
 } from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
 import Modal from "./components/Modal.vue";
@@ -23,7 +25,7 @@ import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
 import { Drink, DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
-import { PING_DURATION } from "./constants";
+import { MINUTE_IN_MS, PING_DURATION } from "./constants";
 import { useSettings } from "./composables/settings";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
@@ -47,10 +49,12 @@ const {
   onDailGoalReached,
   clearDrinks,
   deleteDrink,
+  checkIsDehydrated,
+  getExpectedAmountDifference,
 } = useDrinks();
 
 const { settings } = useSettings();
-const { cups, addCup, clearCups } = useCups();
+const { cups, addCup, clearCups, getCupsCoveringAmount } = useCups();
 const { contents, addContent, clearContents } = useContents();
 
 const bowlRef = ref<HTMLElement>();
@@ -144,6 +148,46 @@ const handleCreateContent = () => {
     name: "",
   };
 };
+
+const drinkNotification = useWebNotification({
+  title: "Hello woahrld!",
+  dir: "auto",
+  lang: "en",
+  renotify: true,
+  tag: "drink-notification",
+});
+
+drinkNotification.onError.on((e) => {
+  console.error(`Notification error`, e);
+});
+
+if (drinkNotification.isSupported.value) {
+  useIntervalFn(
+    () => {
+      const isDehydrated = checkIsDehydrated();
+      if (isDehydrated) {
+        const missing = getExpectedAmountDifference();
+        const cupsToCatchUp = getCupsCoveringAmount(missing);
+        let textBody = `You are ${Math.round(missing)} ml short!`;
+        if (cupsToCatchUp.text) {
+          textBody += ` ${cupsToCatchUp.text} should do it!`;
+        }
+
+        drinkNotification.show({
+          title: `Drink something!`,
+          body: textBody,
+          vibrate: [200, 100, 200],
+        });
+      }
+    },
+    15 * MINUTE_IN_MS,
+    {
+      immediateCallback: true,
+    }
+  );
+} else {
+  console.warn("Web notifications are not supported");
+}
 </script>
 
 <template>
