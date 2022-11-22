@@ -5,47 +5,47 @@ import { nanoid } from "nanoid";
 
 const CONTENTS: Content[] = [
   {
-    id: "1",
+    id: "water",
     name: "Water",
   },
   {
-    id: "2",
+    id: "coffee",
     name: "Coffee",
   },
   {
-    id: "3",
+    id: "tea",
     name: "Tea",
   },
   {
-    id: "4",
+    id: "multivitamin",
     name: "Multivitamin",
   },
   {
-    id: "5",
+    id: "juice",
     name: "Juice",
   },
   {
-    id: "5",
+    id: "ice-tea",
     name: "Ice Tea",
   },
   {
-    id: "7",
+    id: "soft-drink",
     name: "Soft Drink",
   },
   {
-    id: "8",
+    id: "beer",
     name: "Beer",
   },
   {
-    id: "9",
+    id: "wine",
     name: "Wine",
   },
   {
-    id: "10",
+    id: "coktail",
     name: "Cocktail",
   },
   {
-    id: "11",
+    id: "other",
     name: "Other",
   },
 ];

@@ -4,6 +4,7 @@ import {
   TransitionPresets,
   useDeviceOrientation,
   useIntervalFn,
+  useStorage,
   useTransition,
   useWebNotification,
 } from "@vueuse/core";
@@ -31,6 +32,12 @@ import { useSettings } from "./composables/settings";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
 import BaseInput from "./components/BaseInput.vue";
+
+const getDefaultNewDrinkData = () => ({
+  contentId: "water",
+  cupId: "md-cup",
+  amount: 0,
+});
 
 const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
 
@@ -94,11 +101,14 @@ onDailGoalReached.on(() => {
   });
 });
 
-const newDrinkData = ref<Partial<DrinkData>>({
-  contentId: "1",
-  cupId: "1",
-  amount: 0,
-});
+const newDrinkData = useStorage<Partial<DrinkData>>(
+  "new-drink",
+  getDefaultNewDrinkData(),
+  localStorage,
+  {
+    mergeDefaults: true,
+  }
+);
 
 const newDrink = computed(() => {
   return {
@@ -120,6 +130,7 @@ const handleDeleteEverything = () => {
     clearDrinks();
     clearCups();
     clearContents();
+    newDrinkData.value = getDefaultNewDrinkData();
     settingsModal.value?.close();
   }
 };
@@ -131,7 +142,7 @@ const newCupData = ref({
   amount: undefined as number | undefined,
 });
 const handleCreateCup = () => {
-  if (!newCupData.value.name || !newCupData.value.amount) return;
+  if (!newCupData.value.name || Number.isNaN(newCupData.value.amount)) return;
   addCup(newCupData.value as any);
   newCupData.value = {
     name: "",

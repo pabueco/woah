@@ -5,12 +5,12 @@ import { computed } from "vue";
 import { Cup } from "../types";
 
 const CUPS: Cup[] = [
-  { id: "1", name: "Small Cup", amount: 200 },
-  { id: "2", name: "Normal Cup", amount: 300 },
-  { id: "3", name: "Large Cup", amount: 400 },
-  { id: "4", name: "Small Bottle", amount: 500 },
-  { id: "5", name: "Normal Bottle", amount: 1000 },
-  { id: "6", name: "Large Bottle", amount: 1500 },
+  { id: "sm-cup", name: "Small Cup", amount: 200 },
+  { id: "md-cup", name: "Normal Cup", amount: 300 },
+  { id: "lg-cup", name: "Large Cup", amount: 400 },
+  { id: "sm-bottle", name: "Small Bottle", amount: 500 },
+  { id: "md-bottle", name: "Normal Bottle", amount: 1000 },
+  { id: "lg-bottle", name: "Large Bottle", amount: 1500 },
 ];
 
 const rawCups = useStorage<Cup[]>("cups", [], localStorage);
