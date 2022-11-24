@@ -191,7 +191,7 @@ useIntervalFn(
 
 <template>
   <div class="container mx-auto max-w-sm px-5 py-10">
-    <div class="fixed top-10 left-10 flex gap-4">
+    <div class="absolute top-10 left-10 flex gap-4">
       <Modal title="Notifications">
         <template #trigger>
           <button>
@@ -232,7 +232,7 @@ useIntervalFn(
         </div>
       </Modal>
     </div>
-    <div class="fixed top-10 right-10 flex gap-4">
+    <div class="absolute top-10 right-10 flex gap-4">
       <Modal title="Settings" ref="settingsModal">
         <template #trigger>
           <button>
