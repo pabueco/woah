@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onKeyStroke, useScrollLock } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
+import { XIcon } from "vue-tabler-icons";
 import BaseInput from "./BaseInput.vue";
 
 const props = defineProps<{
@@ -75,11 +76,11 @@ const handleCreate = () => {
         class="fixed inset-0 z-50 px-5 flex items-center justify-center"
       >
         <div
-          class="absolute inset-0 bg-white/90"
+          class="absolute inset-0 bg-gray-100/90 dark:bg-gray-900/90"
           @click="isVisible = false"
         ></div>
         <div
-          class="content w-full max-h-[80vh] overflow-y-auto max-w-md bg-black text-white z-10 transition duration-500 rounded-xl"
+          class="content w-full max-h-[80vh] max-w-md bg-black text-white z-10 transition duration-500 rounded-xl relative"
           :class="[
             origin || 'origin-center',
             {
@@ -87,46 +88,53 @@ const handleCreate = () => {
             },
           ]"
         >
-          <slot>
-            <div class="flex flex-col">
-              <button
-                v-for="option in options"
-                :key="option.id"
-                @click="handleOptionClick(option)"
-                class="flex items-center justify-between py-3 px-8 hover:text-indigo-200 transition"
-                :class="{
-                  'text-indigo-300': option.id === modelValue,
-                }"
-              >
-                <div class="font-medium">
-                  {{ option.name }}
-                </div>
-                <div
-                  v-if="
-                    $slots['option-hint'] ||
-                    option.hint ||
-                    (hintKey && option[hintKey])
-                  "
-                  class="text-xs"
+          <div class="absolute bottom-full right-3 -translate-y-2">
+            <button class="opacity-50" @click="isVisible = false">
+              <XIcon class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="h-full w-full overflow-y-auto">
+            <slot>
+              <div class="flex flex-col">
+                <button
+                  v-for="option in options"
+                  :key="option.id"
+                  @click="handleOptionClick(option)"
+                  class="flex items-center justify-between py-3 px-8 hover:text-indigo-200 transition"
+                  :class="{
+                    'text-indigo-300': option.id === modelValue,
+                  }"
                 >
-                  <slot name="option-hint" :option="option">
-                    {{ option[hintKey!] || option.hint }}
-                  </slot>
+                  <div class="font-medium">
+                    {{ option.name }}
+                  </div>
+                  <div
+                    v-if="
+                      $slots['option-hint'] ||
+                      option.hint ||
+                      (hintKey && option[hintKey])
+                    "
+                    class="text-xs"
+                  >
+                    <slot name="option-hint" :option="option">
+                      {{ option[hintKey!] || option.hint }}
+                    </slot>
+                  </div>
+                </button>
+
+                <div v-if="creatable" class="px-8 mb-4 mt-8">
+                  <BaseInput
+                    label="Create your own"
+                    @keyup.enter.exact="handleCreate"
+                  />
                 </div>
-              </button>
 
-              <div v-if="creatable" class="px-8 mb-4 mt-8">
-                <BaseInput
-                  label="Create your own"
-                  @keyup.enter.exact="handleCreate"
-                />
+                <div v-if="$slots.bottom" class="px-8 mb-4 mt-8">
+                  <slot name="bottom" />
+                </div>
               </div>
-
-              <div v-if="$slots.bottom" class="px-8 mb-4 mt-8">
-                <slot name="bottom" />
-              </div>
-            </div>
-          </slot>
+            </slot>
+          </div>
         </div>
       </div>
     </Transition>

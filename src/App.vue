@@ -2,8 +2,11 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import {
   TransitionPresets,
+  useColorMode,
+  useCycleList,
   useDeviceOrientation,
   useIntervalFn,
+  usePermission,
   useStorage,
   useTransition,
   useWebNotification,
@@ -23,19 +26,20 @@ import {
   BellIcon,
   AlertTriangleIcon,
   InfoCircleIcon,
+  CirclePlusIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
 import { Drink, DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
-import { MINUTE_IN_MS, PING_DURATION } from "./constants";
+import { COLOR_THEMES, MINUTE_IN_MS, PING_DURATION } from "./constants";
 import { useSettings } from "./composables/settings";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
 import BaseInput from "./components/BaseInput.vue";
 import { showNotification } from "./utils/notification";
-import { usePermission } from "@vueuse/core";
+import BaseSelect from "./components/BaseSelect.vue";
 
 const notificationPermission = usePermission("notifications", {
   controls: true,
@@ -48,6 +52,11 @@ const getDefaultNewDrinkData = () => ({
   contentId: "water",
   cupId: "md-cup",
   amount: 0,
+});
+
+const colorMode = useColorMode({
+  emitAuto: true,
+  modes: COLOR_THEMES.reduce((acc, cur) => Object.assign(acc, { cur }), {}),
 });
 
 const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
@@ -209,9 +218,9 @@ const requestNotificationPermission = async () => {
         <template #trigger>
           <button class="relative">
             <div
-              class="absolute top-0 right-0 w-3 h-3 rounded-full bg-indigo-500 border-2 border-gray-10"
+              class="absolute top-0 right-0 w-3 h-3 rounded-full bg-indigo-500 border-2 border-gray-10 dark:border-gray-900"
             ></div>
-            <BellIcon class="w-6 h-6 text-black transition hover:text-black" />
+            <BellIcon class="w-6 h-6 transition" />
           </button>
         </template>
 
@@ -269,14 +278,26 @@ const requestNotificationPermission = async () => {
       <Modal title="Settings" ref="settingsModal">
         <template #trigger>
           <button>
-            <SettingsIcon
-              class="w-6 h-6 text-black transition hover:text-black"
-            />
+            <SettingsIcon class="w-6 h-6" />
           </button>
         </template>
 
-        <div class="p-8 space-y-5">
+        <div class="p-8 space-y-7">
           <h4 class="font-extrabold text-2xl">Settings</h4>
+
+          <div class="!mt-3">
+            <div class="text-xs text-gray-400">
+              Settings are saved automatically.
+            </div>
+          </div>
+
+          <div>
+            <BaseSelect
+              label="Theme"
+              :options="COLOR_THEMES"
+              v-model="colorMode"
+            />
+          </div>
 
           <div>
             <BaseInput
@@ -284,11 +305,9 @@ const requestNotificationPermission = async () => {
               v-model="settings.dailyTargetAmount"
               type="number"
             />
-          </div>
-
-          <div class="">
-            <div class="text-xs text-gray-400">
-              Settings are applied and saved automatically.
+            <div class="text-sm mt-3 text-gray-300">
+              An average guideline is 35 ml/kg of body weight, but your required
+              amount can vary based on many factors!
             </div>
           </div>
 
@@ -318,31 +337,27 @@ const requestNotificationPermission = async () => {
         class="order-first px-2 py-5"
         @click="setDate(date.subtract(1, 'day'))"
       >
-        <ChevronLeftIcon
-          class="w-6 h-6 text-black transition hover:text-black stroke-[3px]"
-        />
+        <ChevronLeftIcon class="w-6 h-6 stroke-[3px]" />
       </button>
       <button
         class="order-last px-2 py-5 [&:disabled]:opacity-25"
         @click="setDate(date.add(1, 'day'))"
         :disabled="date.isToday()"
       >
-        <ChevronRightIcon
-          class="w-6 h-6 text-black transition hover:text-black stroke-[3px]"
-        />
+        <ChevronRightIcon class="w-6 h-6 stroke-[3px]" />
       </button>
 
       <div ref="bowlRef" class="relative w-60 mx-auto shrink-0">
         <Transition name="date-badge">
           <div
             v-if="!date.isToday()"
-            class="text-center absolute -translate-y-1/2 left-1/2 top-1 -translate-x-1/2 bg-black rounded-full text-white px-4 z-20 text-xs py-1.5 leading-none origin-center flex"
+            class="text-center absolute -translate-y-1/2 left-1/2 top-1 -translate-x-1/2 bg-black dark:bg-gray-100 rounded-full text-white dark:text-black font-medium px-4 z-20 text-xs py-1.5 leading-none origin-center flex"
           >
             {{ date.isToday() ? "Today" : date.format("ddd, DD. MMM") }}
           </div>
         </Transition>
         <div
-          class="aspect-square z-10 w-full mx-auto rounded-full border-[7px] border-gray-100 ring ring-black flex flex-col items-center justify-center relative overflow-hidden transition"
+          class="aspect-square z-10 w-full mx-auto rounded-full border-[7px] border-gray-100 dark:border-gray-900 ring ring-black dark:ring-gray-100 flex flex-col items-center justify-center relative overflow-hidden transition"
           :class="{
             'scale-105': wasPingJustAdded,
           }"
@@ -381,12 +396,12 @@ const requestNotificationPermission = async () => {
                 class="absolute bottom-full translate-y-[1.1rem]"
               >
                 <path
-                  class="fill-indigo-300"
+                  class="fill-indigo-300 dark:fill-indigo-700"
                   fill-opacity="1"
                   d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,181.3C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
                 ></path>
               </svg>
-              <div class="flex-1 bg-indigo-300"></div>
+              <div class="flex-1 bg-indigo-300 dark:bg-indigo-700"></div>
             </div>
           </div>
         </div>
@@ -408,7 +423,7 @@ const requestNotificationPermission = async () => {
         <Modal v-model="newDrinkData.cupId" :options="cups" hint-key="amount">
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
+              class="bg-gray-200 dark:bg-gray-800 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
               <MugIcon class="w-5 h-5" />
               <div>{{ newDrink.cup?.name || newDrink.amount }}</div>
@@ -454,7 +469,7 @@ const requestNotificationPermission = async () => {
         <Modal v-model="newDrinkData.contentId" :options="contents">
           <template #trigger>
             <button
-              class="bg-gray-200 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
+              class="bg-gray-200 dark:bg-gray-800 rounded-xl px-4 py-3 w-full text-left flex items-center gap-2 font-medium"
             >
               <DropletIcon class="h-5 w-5" />
               <div>{{ newDrink.content?.name }}</div>
@@ -488,7 +503,7 @@ const requestNotificationPermission = async () => {
       </div>
       <button
         @click="addDrink(newDrinkData)"
-        class="rounded-xl bg-black text-white w-14 flex flex-col items-center justify-center"
+        class="rounded-xl bg-indigo-300 dark:bg-indigo-600 text-black dark:text-white w-14 flex flex-col items-center justify-center"
       >
         <PlusIcon class="h-7 w-7 stroke-[2.5px]" />
       </button>
@@ -503,8 +518,11 @@ const requestNotificationPermission = async () => {
         v-for="drink in recentDrinks"
         :key="drink.id"
         @click="addDrink(drink)"
-        class="py-2 flex hover:text-indigo-500"
+        class="py-2 hover:text-indigo-500 flex items-center"
       >
+        <CirclePlusIcon
+          class="h-5 w-5 mr-2 text-gray-400 dark:text-gray-600 relative -top-px"
+        />
         <div class="text-base leading-tight flex items-center space-x-1">
           <div v-if="drink.cup">{{ drink.cup?.name }}</div>
           <div v-else>{{ drink.amount }} ml</div>

@@ -11,9 +11,9 @@ export default defineConfig({
     // basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
-      },
+      // devOptions: {
+      //   enabled: true,
+      // },
     }),
   ],
   // preview: {
