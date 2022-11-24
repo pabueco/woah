@@ -31,7 +31,7 @@ export default {
     <input
       :type="type || 'text'"
       v-model="model"
-      class="border-white border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
+      class="border-gray-400 border-2 px-3.5 py-2.5 rounded-xl w-full bg-transparent outline-none focus:border-indigo-400 transition"
       :id="id"
       v-bind="$attrs"
     />
