@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from "vue";
+import { computed, reactive, ref } from "vue";
 import {
+  Pausable,
   TransitionPresets,
   useColorMode,
-  useCycleList,
   useDeviceOrientation,
   useIntervalFn,
   usePermission,
   useStorage,
+  useTitle,
   useTransition,
-  useWebNotification,
 } from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
 import Modal from "./components/Modal.vue";
@@ -26,12 +26,11 @@ import {
   BellIcon,
   AlertTriangleIcon,
   InfoCircleIcon,
-  CirclePlusIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
-import { Drink, DrinkData } from "./types";
+import { DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
 import { COLOR_THEMES, MINUTE_IN_MS, PING_DURATION } from "./constants";
 import { useSettings } from "./composables/settings";
@@ -105,6 +104,7 @@ const doPing = () => {
 
 onAddDrink.on(() => {
   doPing();
+  stopTitleDrinkReminder();
 });
 
 onDailGoalReached.on(() => {
@@ -181,24 +181,62 @@ const handleCreateContent = () => {
   };
 };
 
+// // Scrolling message. Gets slow when tab is inactive.
+// const TITLE_BASE = `w o a h`;
+// const title = useTitle();
+// title.value = TITLE_BASE;
+// const REMINDER_TITLE = `----- DRINK SOMETHING! ----- DRINK SOMETHING! `;
+// let reminderTitleIndex = 0;
+
+// useIntervalFn(() => {
+//   const [cut, remainder] = [
+//     REMINDER_TITLE.slice(0, reminderTitleIndex),
+//     REMINDER_TITLE.slice(reminderTitleIndex),
+//   ];
+//   title.value = remainder + cut;
+//   reminderTitleIndex = (reminderTitleIndex + 1) % REMINDER_TITLE.length;
+// }, 100);
+
+const TITLE_BASE = `w o a h`;
+const title = useTitle();
+title.value = TITLE_BASE;
+let titleDrinkReminder: Pausable;
+
+const startTitleDrinkReminder = () => {
+  let show = true;
+  titleDrinkReminder = useIntervalFn(() => {
+    title.value = show
+      ? "Drink something!"
+      : "############################################";
+    show = !show;
+  }, 1000);
+};
+
+const stopTitleDrinkReminder = () => {
+  titleDrinkReminder?.pause();
+  title.value = TITLE_BASE;
+};
+
 useIntervalFn(
   () => {
     const isDehydrated = checkIsDehydrated();
-    if (isDehydrated) {
-      const missing = getExpectedAmountDifference();
-      const cupsToCatchUp = getCupsCoveringAmount(missing);
-      let textBody = `You are ${Math.round(missing)} ml short!`;
-      if (cupsToCatchUp.text) {
-        textBody += ` ${cupsToCatchUp.text} should do it!`;
-      }
+    if (!isDehydrated) return;
 
-      showNotification({
-        title: `Drink something!`,
-        body: textBody,
-        tag: "drink-notification",
-        renotify: true,
-      });
+    const missing = getExpectedAmountDifference();
+    const cupsToCatchUp = getCupsCoveringAmount(missing);
+    let textBody = `You are ${Math.round(missing)} ml short!`;
+    if (cupsToCatchUp.text) {
+      textBody += ` ${cupsToCatchUp.text} should do it!`;
     }
+
+    startTitleDrinkReminder();
+
+    showNotification({
+      title: `Drink something!`,
+      body: textBody,
+      tag: "drink-notification",
+      renotify: true,
+    });
   },
   15 * MINUTE_IN_MS,
   {
@@ -218,6 +256,7 @@ const requestNotificationPermission = async () => {
         <template #trigger>
           <button class="relative">
             <div
+              v-if="!hasNotificationPermission"
               class="absolute top-0 right-0 w-3 h-3 rounded-full bg-indigo-500 border-2 border-gray-10 dark:border-gray-900"
             ></div>
             <BellIcon class="w-6 h-6 transition" />
@@ -510,7 +549,7 @@ const requestNotificationPermission = async () => {
     </div>
 
     <h3 class="font-extrabold mt-10 mb-2 text-lg">Recent drinks</h3>
-    <div class="flex flex-col">
+    <div class="flex flex-col items-start">
       <div v-if="!recentDrinks.length">
         <p class="text-gray-500 text-sm">Drink something, dude!</p>
       </div>
@@ -518,11 +557,8 @@ const requestNotificationPermission = async () => {
         v-for="drink in recentDrinks"
         :key="drink.id"
         @click="addDrink(drink)"
-        class="py-2 hover:text-indigo-500 flex items-center"
+        class="py-2 hover:text-indigo-500 inline-flex items-center"
       >
-        <CirclePlusIcon
-          class="h-5 w-5 mr-2 text-gray-400 dark:text-gray-600 relative -top-px"
-        />
         <div class="text-base leading-tight flex items-center space-x-1">
           <div v-if="drink.cup">{{ drink.cup?.name }}</div>
           <div v-else>{{ drink.amount }} ml</div>
@@ -575,7 +611,7 @@ const requestNotificationPermission = async () => {
         </div>
 
         <div
-          class="flex items-center gap-1 opacity-0 transition -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
+          class="flex items-center gap-1 opacity-0 transition -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto"
         >
           <button @click="deleteDrink(drink)" class="hover:text-red-500">
             <TrashIcon class="h-5 w-5" />
