@@ -93,7 +93,7 @@ const handleCreate = () => {
               <XIcon class="w-5 h-5" />
             </button>
           </div>
-          <div class="max-h-[80vh] w-full overflow-y-auto">
+          <div class="max-h-[75vh] w-full overflow-y-auto">
             <slot>
               <div class="flex flex-col">
                 <button
