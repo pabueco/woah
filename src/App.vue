@@ -21,6 +21,7 @@ import {
   TrashIcon,
   CornerDownLeftIcon,
   BellIcon,
+  AlertTriangleIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
@@ -32,6 +33,7 @@ import { useSettings } from "./composables/settings";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
 import BaseInput from "./components/BaseInput.vue";
+import { showNotification } from "./utils/notification";
 
 const getDefaultNewDrinkData = () => ({
   contentId: "water",
@@ -161,45 +163,30 @@ const handleCreateContent = () => {
   };
 };
 
-const drinkNotification = useWebNotification({
-  title: "Hello woahrld!",
-  dir: "auto",
-  lang: "en",
-  renotify: true,
-  tag: "drink-notification",
-});
-
-drinkNotification.onError.on((e) => {
-  console.error(`Notification error`, e);
-});
-
-if (drinkNotification.isSupported.value) {
-  useIntervalFn(
-    () => {
-      const isDehydrated = checkIsDehydrated();
-      if (isDehydrated) {
-        const missing = getExpectedAmountDifference();
-        const cupsToCatchUp = getCupsCoveringAmount(missing);
-        let textBody = `You are ${Math.round(missing)} ml short!`;
-        if (cupsToCatchUp.text) {
-          textBody += ` ${cupsToCatchUp.text} should do it!`;
-        }
-
-        drinkNotification.show({
-          title: `Drink something!`,
-          body: textBody,
-          vibrate: [200, 100, 200],
-        });
+useIntervalFn(
+  () => {
+    const isDehydrated = checkIsDehydrated();
+    if (isDehydrated) {
+      const missing = getExpectedAmountDifference();
+      const cupsToCatchUp = getCupsCoveringAmount(missing);
+      let textBody = `You are ${Math.round(missing)} ml short!`;
+      if (cupsToCatchUp.text) {
+        textBody += ` ${cupsToCatchUp.text} should do it!`;
       }
-    },
-    15 * MINUTE_IN_MS,
-    {
-      immediateCallback: true,
+
+      showNotification({
+        title: `Drink something!`,
+        body: textBody,
+        tag: "drink-notification",
+        renotify: true,
+      });
     }
-  );
-} else {
-  console.warn("Web notifications are not supported");
-}
+  },
+  15 * MINUTE_IN_MS,
+  {
+    immediateCallback: true,
+  }
+);
 </script>
 
 <template>
@@ -236,6 +223,12 @@ if (drinkNotification.isSupported.value) {
               time to time.
             </li>
           </ol>
+
+          <div class="text-yellow-500 text-base flex items-start !mt-10">
+            <AlertTriangleIcon class="w-6 h-6 mr-2 shrink-0" /> iOS does not
+            support web notifications yet so you won't get any reminders on
+            iPhones or iPads.
+          </div>
         </div>
       </Modal>
     </div>
