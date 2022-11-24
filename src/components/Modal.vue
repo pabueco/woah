@@ -76,11 +76,11 @@ const handleCreate = () => {
         class="fixed inset-0 z-50 px-5 flex items-center justify-center"
       >
         <div
-          class="absolute inset-0 bg-gray-100/90 dark:bg-gray-900/90"
+          class="absolute inset-0 bg-gray-100/90 dark:bg-gray-900/95"
           @click="isVisible = false"
         ></div>
         <div
-          class="content w-full max-h-[80vh] max-w-md bg-black text-white z-10 transition duration-500 rounded-xl relative"
+          class="content w-full max-w-md bg-black text-white z-10 transition duration-500 rounded-xl relative"
           :class="[
             origin || 'origin-center',
             {
@@ -93,7 +93,7 @@ const handleCreate = () => {
               <XIcon class="w-5 h-5" />
             </button>
           </div>
-          <div class="h-full w-full overflow-y-auto">
+          <div class="max-h-[80vh] w-full overflow-y-auto">
             <slot>
               <div class="flex flex-col">
                 <button
