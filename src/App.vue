@@ -22,6 +22,7 @@ import {
   CornerDownLeftIcon,
   BellIcon,
   AlertTriangleIcon,
+  InfoCircleIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
@@ -34,6 +35,14 @@ import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
 import BaseInput from "./components/BaseInput.vue";
 import { showNotification } from "./utils/notification";
+import { usePermission } from "@vueuse/core";
+
+const notificationPermission = usePermission("notifications", {
+  controls: true,
+});
+const hasNotificationPermission = computed(() => {
+  return notificationPermission.state.value === "granted";
+});
 
 const getDefaultNewDrinkData = () => ({
   contentId: "water",
@@ -187,6 +196,10 @@ useIntervalFn(
     immediateCallback: true,
   }
 );
+
+const requestNotificationPermission = async () => {
+  await notificationPermission.query();
+};
 </script>
 
 <template>
@@ -194,13 +207,33 @@ useIntervalFn(
     <div class="absolute top-10 left-10 flex gap-4">
       <Modal title="Notifications">
         <template #trigger>
-          <button>
+          <button class="relative">
+            <div
+              class="absolute top-0 right-0 w-3 h-3 rounded-full bg-indigo-500 border-2 border-gray-10"
+            ></div>
             <BellIcon class="w-6 h-6 text-black transition hover:text-black" />
           </button>
         </template>
 
         <div class="p-8 space-y-5 prose prose-invert">
           <h4 class="font-extrabold text-2xl">Notifications</h4>
+
+          <div
+            v-if="!hasNotificationPermission"
+            class="text-indigo-400 text-base flex items-start"
+          >
+            <InfoCircleIcon class="w-6 h-6 mr-2 shrink-0" />
+            <div>
+              You have to allow notifications for reminders to work!
+              <button
+                class="underline inline"
+                @click="requestNotificationPermission"
+              >
+                Enable notifications now
+              </button>
+              or check your browser settings.
+            </div>
+          </div>
 
           <p>
             This site does not talk to any server, so there are two things you
