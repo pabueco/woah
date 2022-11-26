@@ -2,6 +2,7 @@ import { useStorage } from "@vueuse/core";
 import { computed } from "vue";
 import { Content } from "../types";
 import { nanoid } from "nanoid";
+import { orderBy } from "lodash-es";
 
 const CONTENTS: Content[] = [
   {
@@ -44,16 +45,14 @@ const CONTENTS: Content[] = [
     id: "coktail",
     name: "Cocktail",
   },
-  {
-    id: "other",
-    name: "Other",
-  },
 ];
 
 const rawContents = useStorage<Content[]>("contents", [], localStorage);
 
 const contents = computed(() => {
-  return [...CONTENTS, ...rawContents.value];
+  return orderBy([...CONTENTS, ...rawContents.value], (content) =>
+    content.name.toLowerCase()
+  );
 });
 
 export function useContents() {

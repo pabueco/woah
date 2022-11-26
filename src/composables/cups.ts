@@ -16,7 +16,7 @@ const CUPS: Cup[] = [
 const rawCups = useStorage<Cup[]>("cups", [], localStorage);
 
 const cups = computed(() => {
-  return [...CUPS, ...rawCups.value];
+  return orderBy([...CUPS, ...rawCups.value], (cup) => cup.amount);
 });
 
 const getClosestCupCoveringAmount = (amount: number) => {
