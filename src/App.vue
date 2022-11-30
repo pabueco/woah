@@ -182,7 +182,7 @@ const handleCreateContent = () => {
 };
 
 // // Scrolling message. Gets slow when tab is inactive.
-// const TITLE_BASE = `w o a h`;
+// const TITLE_BASE = `woah!`;
 // const title = useTitle();
 // title.value = TITLE_BASE;
 // const REMINDER_TITLE = `----- DRINK SOMETHING! ----- DRINK SOMETHING! `;
@@ -197,7 +197,7 @@ const handleCreateContent = () => {
 //   reminderTitleIndex = (reminderTitleIndex + 1) % REMINDER_TITLE.length;
 // }, 100);
 
-const TITLE_BASE = `w o a h`;
+const TITLE_BASE = `woah!`;
 const title = useTitle();
 title.value = TITLE_BASE;
 let titleDrinkReminder: Pausable;
