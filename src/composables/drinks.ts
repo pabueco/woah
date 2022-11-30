@@ -67,12 +67,14 @@ export function useDrinks() {
         (u) => u.contentId === drink.contentId && u.amount === drink.amount
       );
 
-      if (existing) continue;
+      if (existing) {
+        unique.splice(unique.indexOf(existing), 1);
+      }
 
       unique.unshift({ ...enrichDrink(drink) });
     }
 
-    return unique;
+    return unique.slice(0, 5);
   });
 
   const addDrink = (drink: Partial<DrinkData> | Drink) => {
