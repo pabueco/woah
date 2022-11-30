@@ -231,12 +231,14 @@ useIntervalFn(
 
     startTitleDrinkReminder();
 
-    showNotification({
-      title: `Drink something!`,
-      body: textBody,
-      tag: "drink-notification",
-      renotify: true,
-    });
+    if (hasNotificationPermission.value) {
+      showNotification({
+        title: `Drink something!`,
+        body: textBody,
+        tag: "drink-notification",
+        renotify: true,
+      });
+    }
   },
   15 * MINUTE_IN_MS,
   {
