@@ -6,6 +6,7 @@ import {
   useColorMode,
   useDeviceOrientation,
   useIntervalFn,
+  useMediaQuery,
   usePermission,
   useStorage,
   useTitle,
@@ -40,6 +41,8 @@ import BaseInput from "./components/BaseInput.vue";
 import { showNotification } from "./utils/notification";
 import BaseSelect from "./components/BaseSelect.vue";
 
+const MAX_TILT_ANGLE = 30;
+
 const notificationPermission = usePermission("notifications", {
   controls: true,
 });
@@ -60,9 +63,17 @@ const colorMode = useColorMode({
 
 const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
 
-const deviceOrientation = reactive(useDeviceOrientation());
-const tiltAngle = computed(() => (deviceOrientation.gamma || 0) * -0.5);
-const waterTilt = useClamp(tiltAngle, -45, 45);
+const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+const deviceOrientation = computed(() => {
+  if (prefersReducedMotion.value) return null;
+  const orientation = useDeviceOrientation();
+  return orientation;
+});
+const tiltAngle = computed(() => {
+  if (!deviceOrientation.value) return 0;
+  return (deviceOrientation.value.gamma.value || 0) * -0.5;
+});
+const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
 
 const {
   drinksToday,
