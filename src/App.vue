@@ -582,56 +582,53 @@ const requestNotificationPermission = async () => {
       </button>
     </div>
 
-    <button
-      @click="isShowingHistory = !isShowingHistory"
-      class="flex w-full items-center justify-between mt-10 mb-2"
-    >
-      <h3 class="font-extrabold text-lg">Drinks you had today</h3>
-      <div>
-        <ChevronDownIcon
-          class="h-5 w-5 stroke-[3px] transition"
-          :class="{
-            'rotate-180': isShowingHistory,
-          }"
-        />
-      </div>
-    </button>
-    <div v-if="isShowingHistory" class="flex flex-col">
-      <div v-if="!recentDrinks.length">
-        <p class="text-gray-500 text-sm">Are you kidding me?</p>
-      </div>
-      <div
-        v-for="drink in [...drinksToday].reverse()"
-        :key="drink.id"
-        class="py-2 text-left flex items-center justify-between group"
+    <template v-if="drinksToday.length">
+      <button
+        @click="isShowingHistory = !isShowingHistory"
+        class="flex w-full items-center justify-between mt-10 mb-2"
       >
+        <h3 class="font-extrabold text-lg">Drinks you had today</h3>
         <div>
-          <button
-            @click="addDrink(drink)"
-            class="text-base leading-tight flex items-center space-x-1 hover:text-indigo-500"
+          <ChevronDownIcon
+            class="h-5 w-5 stroke-[3px] transition"
+            :class="{
+              'rotate-180': isShowingHistory,
+            }"
+          />
+        </div>
+      </button>
+      <div v-if="isShowingHistory" class="flex flex-col">
+        <div
+          v-for="drink in [...drinksToday].reverse()"
+          :key="drink.id"
+          class="py-2 text-left flex items-center justify-between group"
+        >
+          <div>
+            <button
+              @click="addDrink(drink)"
+              class="text-base leading-tight flex items-center space-x-1 hover:text-indigo-500"
+            >
+              <div v-if="drink.cup">{{ drink.cup?.name }}</div>
+              <div v-else>{{ drink.amount }} ml</div>
+              <div class="font-normal">of</div>
+              <div>{{ drink.content?.name }}</div>
+            </button>
+            <div class="text-xs mt-0.5 text-gray-500">
+              <UseTimeAgo v-slot="{ timeAgo }" :time="drink.date.toDate()">
+                {{ timeAgo }}
+              </UseTimeAgo>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-1 md:opacity-0 transition md:-translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto"
           >
-            <div v-if="drink.cup">{{ drink.cup?.name }}</div>
-            <div v-else>{{ drink.amount }} ml</div>
-
-            <div class="font-normal">of</div>
-            <div>{{ drink.content?.name }}</div>
-          </button>
-          <div class="text-xs mt-0.5 text-gray-500">
-            <UseTimeAgo v-slot="{ timeAgo }" :time="drink.date.toDate()">
-              {{ timeAgo }}
-            </UseTimeAgo>
+            <button @click="deleteDrink(drink)" class="hover:text-red-500">
+              <TrashIcon class="h-5 w-5" />
+            </button>
           </div>
         </div>
-
-        <div
-          class="flex items-center gap-1 opacity-0 transition -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none group-hover:pointer-events-auto"
-        >
-          <button @click="deleteDrink(drink)" class="hover:text-red-500">
-            <TrashIcon class="h-5 w-5" />
-          </button>
-        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
