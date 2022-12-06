@@ -263,7 +263,7 @@ const requestNotificationPermission = async () => {
 </script>
 
 <template>
-  <div class="container mx-auto max-w-sm px-5 py-10">
+  <div class="container mx-auto max-w-sm px-5 py-10 flex flex-col min-h-screen">
     <div class="absolute top-10 left-10 flex gap-4">
       <Modal title="Notifications">
         <template #trigger>
@@ -629,6 +629,18 @@ const requestNotificationPermission = async () => {
         </div>
       </div>
     </template>
+
+    <div
+      class="mt-auto pt-14 text-gray-400 dark:text-gray-400/75 text-xs italic text-center"
+    >
+      By
+      <a
+        href="https://pabue.co"
+        target="_blank"
+        class="dark:hover:text-indigo-500 hover:text-indigo-400 transition"
+        >pabue.co</a
+      >
+    </div>
   </div>
 </template>
 
