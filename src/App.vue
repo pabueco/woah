@@ -165,6 +165,9 @@ const transitionedPercentage = useTransition(percentageToday, {
   duration: 500,
   transition: TransitionPresets.easeInOutSine,
 });
+const waterLevelPercentage = computed(() => {
+  return Math.min(percentageToday.value ? percentageToday.value - 5 : 0, 100);
+});
 
 const isShowingHistory = ref(false);
 
@@ -305,10 +308,7 @@ const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
           <div
             class="absolute inset-0 w-full h-full top-full transition duration-500 ease-in-out origin-top"
             :style="{
-              transform: `translateY(-${Math.min(
-                percentageToday ? percentageToday - 5 : 0,
-                100
-              )}%)`,
+              transform: `translateY(-${waterLevelPercentage}%)`,
             }"
           >
             <div
@@ -334,7 +334,7 @@ const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
         </div>
 
         <div
-          v-for="(ping, index) in pings"
+          v-for="ping in pings"
           :key="ping"
           class="absolute inset-0 bg-indigo-400 rounded-full pointer-events-none"
           :style="{
