@@ -71,7 +71,7 @@ export function useHydrateReminder() {
   };
 
   const requestNotificationPermission = async () => {
-    await notificationPermission.query();
+    await Notification.requestPermission();
   };
 
   return {
