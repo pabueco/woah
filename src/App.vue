@@ -282,6 +282,7 @@ const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
           </div>
         </Transition>
         <div
+          v-if="expectedAmountNow > 0"
           class="absolute w-full aspect-square transition duration-300"
           :style="{
             transform: `rotate(${exptectedAmountRotation}deg)`,
