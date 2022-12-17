@@ -2,7 +2,12 @@
 import { onKeyStroke, useScrollLock } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
 import { XIcon } from "vue-tabler-icons";
+import { isIOS } from "../utils/browser";
 import BaseInput from "./BaseInput.vue";
+
+const usingIOS = computed(() => {
+  return isIOS();
+});
 
 const props = defineProps<{
   title?: string;
@@ -33,7 +38,11 @@ const scrollLock = useScrollLock(document.body);
 
 watch(isVisible, (value) => {
   isShowingContent.value = true;
-  scrollLock.value = value;
+
+  // Locking body scroll breaks scrolling in modal on iOS.
+  if (!usingIOS.value) {
+    scrollLock.value = value;
+  }
 });
 
 const onTriggerClick = (e: MouseEvent) => {
