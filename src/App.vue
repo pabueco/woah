@@ -516,15 +516,26 @@ const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
     </template>
 
     <div
-      class="mt-auto pt-14 text-gray-400 dark:text-gray-400/75 text-xs italic text-center"
+      class="mt-auto pt-14 text-gray-400 dark:text-gray-400/75 text-xs italic text-center flex items-center justify-center space-x-2"
     >
-      By
-      <a
-        href="https://pabue.co"
-        target="_blank"
-        class="dark:hover:text-indigo-500 hover:text-indigo-400 transition"
-        >pabue.co</a
-      >
+      <div>
+        By
+        <a
+          href="https://pabue.co"
+          target="_blank"
+          class="dark:hover:text-indigo-500 hover:text-indigo-400 transition"
+          >pabue.co</a
+        >
+      </div>
+      <div>•</div>
+      <div>
+        <a
+          href="https://github.com/pabueco/woah"
+          target="_blank"
+          class="dark:hover:text-indigo-500 hover:text-indigo-400 transition"
+          >GitHub</a
+        >
+      </div>
     </div>
   </div>
 </template>
