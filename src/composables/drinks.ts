@@ -6,7 +6,6 @@ import { useSettings } from "./settings";
 import { useCups } from "./cups";
 import { useContents } from "./contents";
 import { nanoid } from "nanoid";
-import { DAY_END, DAY_START } from "../constants";
 
 const date = ref(dayjs());
 
@@ -109,8 +108,13 @@ export function useDrinks() {
 
   const getExpectedAmountNow = () => {
     const now = dayjs();
-    const start = dayjs().hour(DAY_START);
-    const end = dayjs().hour(DAY_END);
+    const start = dayjs().hour(settings.value.dayStartHour);
+    let end = dayjs().hour(settings.value.dayEndHour);
+
+    // If day ends after midnight, add a day to the end date.
+    if (settings.value.dayStartHour > settings.value.dayEndHour) {
+      end = end.add(1, "day");
+    }
 
     if (now.isBefore(start)) return 0;
     if (now.isAfter(end)) return settings.value.dailyTargetAmount;

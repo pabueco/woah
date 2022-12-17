@@ -387,6 +387,33 @@ const requestNotificationPermission = async () => {
             </div>
           </div>
 
+          <div>
+            <h3 class="font-bold text-lg mb-3">Your daily routine</h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <BaseInput
+                  label="Day starts at"
+                  v-model="settings.dayStartHour"
+                  type="number"
+                />
+              </div>
+              <div>
+                <BaseInput
+                  label="Day ends at"
+                  v-model="settings.dayEndHour"
+                  type="number"
+                  :min="settings.dayStartHour + 1"
+                  :max="24"
+                />
+              </div>
+            </div>
+            <div class="text-sm mt-3 text-gray-300 mb-3">
+              Used to calculate how much you should have been drinking at each
+              moment. All time values are in 24-hour format.
+            </div>
+          </div>
+
           <div class="!mt-10">
             <h4 class="font-extrabold text-lg mb-3">Danger Zone</h4>
             <button
