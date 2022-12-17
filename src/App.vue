@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
-  Pausable,
   TransitionPresets,
-  useColorMode,
   useDeviceOrientation,
+  useEventBus,
   useIntervalFn,
   useMediaQuery,
-  usePermission,
   useStorage,
-  useTitle,
   useTransition,
 } from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
@@ -25,57 +22,33 @@ import {
   TrashIcon,
   CornerDownLeftIcon,
   BellIcon,
-  AlertTriangleIcon,
-  InfoCircleIcon,
   TriangleIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
-import { mapRange, debugRefs } from "./utils";
+import { mapRange } from "./utils";
 import { DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
-import { COLOR_THEMES, MINUTE_IN_MS, PING_DURATION } from "./constants";
+import {
+  PING_DURATION,
+  MAX_TILT_ANGLE,
+  EVENT_DELETED_EVERYTHING,
+} from "./constants";
 import { useSettings } from "./composables/settings";
+import { useHydrateReminder } from "./composables/reminder";
 import confetti from "canvas-confetti";
 import { UseTimeAgo } from "@vueuse/components";
-import BaseInput from "./components/BaseInput.vue";
-import { showNotification } from "./utils/notification";
-import BaseSelect from "./components/BaseSelect.vue";
-
-const MAX_TILT_ANGLE = 30;
-
-const notificationPermission = usePermission("notifications", {
-  controls: true,
-});
-const hasNotificationPermission = computed(() => {
-  return notificationPermission.state.value === "granted";
-});
-
-const getDefaultNewDrinkData = () => ({
-  contentId: "water",
-  cupId: "md-cup",
-  amount: 0,
-});
-
-const colorMode = useColorMode({
-  emitAuto: true,
-  modes: COLOR_THEMES.reduce((acc, cur) => Object.assign(acc, { cur }), {}),
-});
-
-const settingsModal = ref<InstanceType<typeof Modal> | null>(null);
+import Settings from "./components/Settings.vue";
+import NotificationInfo from "./components/NotificationInfo.vue";
 
 const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
-const deviceOrientation = computed(() => {
-  if (prefersReducedMotion.value) return null;
-  const orientation = useDeviceOrientation();
-  return orientation;
+
+const eventDeletedEverything = useEventBus(EVENT_DELETED_EVERYTHING);
+eventDeletedEverything.on(() => {
+  newDrinkData.value = getDefaultNewDrinkData();
+  settingsModalRef.value?.close();
 });
-const tiltAngle = computed(() => {
-  if (!deviceOrientation.value) return 0;
-  return (deviceOrientation.value.gamma.value || 0) * -0.5;
-});
-const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
 
 const {
   drinksToday,
@@ -87,26 +60,33 @@ const {
   setDate,
   onAddDrink,
   onDailGoalReached,
-  clearDrinks,
   deleteDrink,
   checkIsDehydrated,
-  getExpectedAmountDifference,
   getExpectedAmountNow,
+  getDefaultNewDrinkData,
 } = useDrinks();
 
+const { hasNotificationPermission, cancelCurrentReminder, runReminder } =
+  useHydrateReminder();
+runReminder();
+
 const { settings } = useSettings();
-const { cups, addCup, clearCups, getCupsCoveringAmount } = useCups();
-const { contents, addContent, clearContents } = useContents();
+const { cups, addCup } = useCups();
+const { contents, addContent } = useContents();
 
 const bowlRef = ref<HTMLElement>();
+const settingsModalRef = ref<InstanceType<typeof Modal> | null>(null);
 
 const pings = ref<string[]>([]);
 const wasPingJustAdded = ref(false);
 
 const expectedAmountNow = ref(0);
+const setExpectedAmountNow = () => {
+  expectedAmountNow.value = getExpectedAmountNow();
+};
 useIntervalFn(
   () => {
-    expectedAmountNow.value = getExpectedAmountNow();
+    setExpectedAmountNow();
   },
   1000,
   { immediate: true, immediateCallback: true }
@@ -124,6 +104,12 @@ const isDehydratedNow = computed(() => {
   return checkIsDehydrated();
 });
 
+// Not updating the expected amount when the daily target amount changes causes the indicator to jump around.
+watch(
+  () => settings.value.dailyTargetAmount,
+  () => setExpectedAmountNow()
+);
+
 const doPing = () => {
   const id = uniqueId("ping-");
   pings.value.push(id);
@@ -139,7 +125,7 @@ const doPing = () => {
 
 onAddDrink.on(() => {
   doPing();
-  stopTitleDrinkReminder();
+  cancelCurrentReminder();
 });
 
 onDailGoalReached.on(() => {
@@ -180,16 +166,6 @@ const transitionedPercentage = useTransition(percentageToday, {
   transition: TransitionPresets.easeInOutSine,
 });
 
-const handleDeleteEverything = () => {
-  if (confirm("Are you sure you want to delete everything?")) {
-    clearDrinks();
-    clearCups();
-    clearContents();
-    newDrinkData.value = getDefaultNewDrinkData();
-    settingsModal.value?.close();
-  }
-};
-
 const isShowingHistory = ref(false);
 
 const newCupData = ref({
@@ -216,74 +192,19 @@ const handleCreateContent = () => {
   };
 };
 
-// // Scrolling message. Gets slow when tab is inactive.
-// const TITLE_BASE = `woah!`;
-// const title = useTitle();
-// title.value = TITLE_BASE;
-// const REMINDER_TITLE = `----- DRINK SOMETHING! ----- DRINK SOMETHING! `;
-// let reminderTitleIndex = 0;
-
-// useIntervalFn(() => {
-//   const [cut, remainder] = [
-//     REMINDER_TITLE.slice(0, reminderTitleIndex),
-//     REMINDER_TITLE.slice(reminderTitleIndex),
-//   ];
-//   title.value = remainder + cut;
-//   reminderTitleIndex = (reminderTitleIndex + 1) % REMINDER_TITLE.length;
-// }, 100);
-
-const TITLE_BASE = `woah!`;
-const title = useTitle();
-title.value = TITLE_BASE;
-let titleDrinkReminder: Pausable;
-
-const startTitleDrinkReminder = () => {
-  let show = true;
-  titleDrinkReminder = useIntervalFn(() => {
-    title.value = show
-      ? "Drink something!"
-      : "############################################";
-    show = !show;
-  }, 1000);
-};
-
-const stopTitleDrinkReminder = () => {
-  titleDrinkReminder?.pause();
-  title.value = TITLE_BASE;
-};
-
-useIntervalFn(
-  () => {
-    const isDehydrated = checkIsDehydrated();
-    if (!isDehydrated) return;
-
-    const missing = getExpectedAmountDifference();
-    const cupsToCatchUp = getCupsCoveringAmount(missing);
-    let textBody = `You are ${Math.round(missing)} ml short!`;
-    if (cupsToCatchUp.text) {
-      textBody += ` ${cupsToCatchUp.text} should do it!`;
-    }
-
-    startTitleDrinkReminder();
-
-    if (hasNotificationPermission.value) {
-      showNotification({
-        title: `Drink something!`,
-        body: textBody,
-        tag: "drink-notification",
-        renotify: true,
-      });
-    }
-  },
-  15 * MINUTE_IN_MS,
-  {
-    immediateCallback: true,
-  }
-);
-
-const requestNotificationPermission = async () => {
-  await notificationPermission.query();
-};
+/**
+ * Handle liquid animation on device tilt.
+ */
+const deviceOrientation = computed(() => {
+  if (prefersReducedMotion.value) return null;
+  const orientation = useDeviceOrientation();
+  return orientation;
+});
+const tiltAngle = computed(() => {
+  if (!deviceOrientation.value) return 0;
+  return (deviceOrientation.value.gamma.value || 0) * -0.5;
+});
+const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
 </script>
 
 <template>
@@ -300,130 +221,18 @@ const requestNotificationPermission = async () => {
           </button>
         </template>
 
-        <div class="p-8 space-y-5 prose prose-invert">
-          <h4 class="font-extrabold text-2xl">Notifications</h4>
-
-          <div
-            v-if="!hasNotificationPermission"
-            class="text-indigo-400 text-base flex items-start"
-          >
-            <InfoCircleIcon class="w-6 h-6 mr-2 shrink-0" />
-            <div>
-              You have to allow notifications for reminders to work!
-              <button
-                class="underline inline"
-                @click="requestNotificationPermission"
-              >
-                Enable notifications now
-              </button>
-              or check your browser settings.
-            </div>
-          </div>
-
-          <p>
-            This site does not talk to any server, so there are two things you
-            should know if you want to use reminders.
-          </p>
-
-          <ol>
-            <li>
-              <strong>You need to have this site open in a tab.</strong> <br />
-              If you don't want to think about opening it every day, you can
-              tell your browser to open it automatically. Look for "start-up" in
-              your browser's settings.
-            </li>
-            <li>
-              <strong>The tab should not be put to sleep.</strong> <br />
-              Most modern browsers put websites to sleep when they are not used
-              for a while to save resources. This means that the reminders might
-              not work reliably. You can disable it for this website by looking
-              for "sleep" in your browser's settings or just visit this tab from
-              time to time.
-            </li>
-          </ol>
-
-          <div class="text-yellow-500 text-base flex items-start !mt-10">
-            <AlertTriangleIcon class="w-6 h-6 mr-2 shrink-0" /> iOS does not
-            support web notifications yet so you won't get any reminders on
-            iPhones or iPads.
-          </div>
-        </div>
+        <NotificationInfo />
       </Modal>
     </div>
     <div class="absolute top-10 right-10 flex gap-4">
-      <Modal title="Settings" ref="settingsModal">
+      <Modal title="Settings" ref="settingsModalRef">
         <template #trigger>
           <button>
             <SettingsIcon class="w-6 h-6" />
           </button>
         </template>
 
-        <div class="p-8 space-y-7">
-          <h4 class="font-extrabold text-2xl">Settings</h4>
-
-          <div class="!mt-3">
-            <div class="text-xs text-gray-400">
-              Settings are saved automatically.
-            </div>
-          </div>
-
-          <div>
-            <BaseSelect
-              label="Theme"
-              :options="COLOR_THEMES"
-              v-model="colorMode"
-            />
-          </div>
-
-          <div>
-            <BaseInput
-              label="Daily Target Amount (ml)"
-              v-model="settings.dailyTargetAmount"
-              type="number"
-            />
-            <div class="text-sm mt-3 text-gray-300">
-              An average guideline is 35 ml/kg of body weight, but your required
-              amount can vary based on many factors!
-            </div>
-          </div>
-
-          <div>
-            <h3 class="font-bold text-lg mb-3">Your daily routine</h3>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <BaseInput
-                  label="Day starts at"
-                  v-model="settings.dayStartHour"
-                  type="number"
-                />
-              </div>
-              <div>
-                <BaseInput
-                  label="Day ends at"
-                  v-model="settings.dayEndHour"
-                  type="number"
-                  :min="settings.dayStartHour + 1"
-                  :max="24"
-                />
-              </div>
-            </div>
-            <div class="text-sm mt-3 text-gray-300 mb-3">
-              Used to calculate how much you should have been drinking at each
-              moment. All time values are in 24-hour format.
-            </div>
-          </div>
-
-          <div class="!mt-10">
-            <h4 class="font-extrabold text-lg mb-3">Danger Zone</h4>
-            <button
-              @click="handleDeleteEverything"
-              class="rounded-xl bg-red-500 px-4 py-2.5 font-semibold text-sm hover:bg-red-400 transition"
-            >
-              Delete everything
-            </button>
-          </div>
-        </div>
+        <Settings />
       </Modal>
     </div>
 

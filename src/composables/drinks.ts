@@ -19,6 +19,12 @@ const clearDrinks = () => {
   rawDrinks.value = [];
 };
 
+const getDefaultNewDrinkData = () => ({
+  contentId: "water",
+  cupId: "md-cup",
+  amount: 0,
+});
+
 const onAddDrink = useEventBus<Drink>("add-drink");
 const onDailGoalReached = useEventBus("daily-goal-reached");
 
@@ -141,6 +147,7 @@ export function useDrinks() {
     percentageToday,
     addDrink,
     contents,
+    getDefaultNewDrinkData,
 
     deleteDrink,
     clearDrinks,

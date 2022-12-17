@@ -7,7 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   plugins: [
     vue(),
-    // Makes the service worker not work on dev, so disabled for now.
+    // Makes the service worker (used for notifications) not work on dev, so disabled for now.
     // basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
