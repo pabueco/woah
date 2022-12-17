@@ -19,6 +19,7 @@ export default defineConfig({
         "logo-dark.svg",
         "logo-light.svg",
         "logo.svg",
+        "logo-dark.png",
       ],
       manifest: {
         name: "woah!",
@@ -32,6 +33,11 @@ export default defineConfig({
             sizes: "any",
             type: "image/svg+xml",
             purpose: "any",
+          },
+          {
+            src: "logo-dark.png",
+            sizes: "512x512",
+            type: "image/png",
           },
         ],
         display: "standalone",
