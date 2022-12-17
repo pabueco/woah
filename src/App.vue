@@ -176,7 +176,8 @@ const newCupData = ref({
   amount: undefined as number | undefined,
 });
 const handleCreateCup = () => {
-  if (!newCupData.value.name || Number.isNaN(newCupData.value.amount)) return;
+  const amount = Number(newCupData.value.amount);
+  if (!newCupData.value.name || !amount || isNaN(amount)) return;
   addCup(newCupData.value as any);
   newCupData.value = {
     name: "",
