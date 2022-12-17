@@ -8,5 +8,7 @@ describe("mapRange", () => {
     expect(mapRange(0.43, 0, 1, 0, 100)).toBe(43);
     expect(mapRange(0.5, 0, 1, -90, 90)).toBe(0);
     expect(mapRange(0.75, 0, 1, -90, 90)).toBe(45);
+
+    expect(mapRange(0.75, 0, 1, 90, -90)).toBe(-45);
   });
 });

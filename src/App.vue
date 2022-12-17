@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, ref } from "vue";
 import {
   Pausable,
   TransitionPresets,
@@ -27,10 +27,12 @@ import {
   BellIcon,
   AlertTriangleIcon,
   InfoCircleIcon,
+  TriangleIcon,
 } from "vue-tabler-icons";
 import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
+import { mapRange, debugRefs } from "./utils";
 import { DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
 import { COLOR_THEMES, MINUTE_IN_MS, PING_DURATION } from "./constants";
@@ -89,6 +91,7 @@ const {
   deleteDrink,
   checkIsDehydrated,
   getExpectedAmountDifference,
+  getExpectedAmountNow,
 } = useDrinks();
 
 const { settings } = useSettings();
@@ -99,6 +102,27 @@ const bowlRef = ref<HTMLElement>();
 
 const pings = ref<string[]>([]);
 const wasPingJustAdded = ref(false);
+
+const expectedAmountNow = ref(0);
+useIntervalFn(
+  () => {
+    expectedAmountNow.value = getExpectedAmountNow();
+  },
+  1000,
+  { immediate: true, immediateCallback: true }
+);
+const exptectedAmoutNowPercentage = computed(() => {
+  return Math.min(
+    (expectedAmountNow.value / settings.value.dailyTargetAmount) * 100,
+    100
+  );
+});
+const exptectedAmountRotation = computed(() => {
+  return mapRange(exptectedAmoutNowPercentage.value, 0, 100, 90, -90);
+});
+const isDehydratedNow = computed(() => {
+  return checkIsDehydrated();
+});
 
 const doPing = () => {
   const id = uniqueId("ping-");
@@ -386,13 +410,13 @@ const requestNotificationPermission = async () => {
 
     <div class="flex items-center mb-10">
       <button
-        class="order-first px-2 py-5"
+        class="order-first px-2 py-5 -ml-2"
         @click="setDate(date.subtract(1, 'day'))"
       >
         <ChevronLeftIcon class="w-6 h-6 stroke-[3px]" />
       </button>
       <button
-        class="order-last px-2 py-5 [&:disabled]:opacity-25"
+        class="order-last px-2 py-5 [&:disabled]:opacity-25 -mr-2"
         @click="setDate(date.add(1, 'day'))"
         :disabled="date.isToday()"
       >
@@ -408,6 +432,21 @@ const requestNotificationPermission = async () => {
             {{ date.isToday() ? "Today" : date.format("ddd, DD. MMM") }}
           </div>
         </Transition>
+        <div
+          class="absolute w-full aspect-square transition duration-300"
+          :style="{
+            transform: `rotate(${exptectedAmountRotation}deg)`,
+          }"
+        >
+          <div class="absolute top-1/2 -translate-y-1/2 -right-6 -rotate-90">
+            <TriangleIcon
+              class="w-[15px] h-[15px] text-black dark:text-white stroke-none fill-current"
+              :class="{
+                'animate-bounce': isDehydratedNow,
+              }"
+            />
+          </div>
+        </div>
         <div
           class="aspect-square z-10 w-full mx-auto rounded-full border-[7px] border-gray-100 dark:border-gray-900 ring ring-black dark:ring-gray-100 flex flex-col items-center justify-center relative overflow-hidden transition"
           :class="{

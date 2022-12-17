@@ -33,9 +33,10 @@ export function useDrinks() {
   });
 
   const percentageToday = computed(() => {
-    return Math.round(
+    const percentage = Math.round(
       (amountToday.value / settings.value.dailyTargetAmount) * 100
     );
+    return isNaN(percentage) ? 0 : percentage;
   });
 
   const enrichDrink = (drink: DrinkData): Drink => {
@@ -148,5 +149,6 @@ export function useDrinks() {
 
     checkIsDehydrated,
     getExpectedAmountDifference,
+    getExpectedAmountNow,
   };
 }
