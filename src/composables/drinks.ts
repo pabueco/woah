@@ -1,7 +1,7 @@
 import { useEventBus, useStorage } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { Drink, DrinkData } from "../types";
-import dayjs from "dayjs";
+import { dayjs } from "../utils/date";
 import { useSettings } from "./settings";
 import { useCups } from "./cups";
 import { useContents } from "./contents";
