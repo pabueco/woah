@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   TransitionPresets,
+  tryOnMounted,
   useDeviceOrientation,
   useEventBus,
   useIntervalFn,
@@ -72,7 +73,11 @@ const {
   cancelCurrentReminder,
   runReminder,
 } = useHydrateReminder();
-runReminder();
+
+tryOnMounted(() => {
+  requestNotificationPermission();
+  runReminder();
+});
 
 const { settings } = useSettings();
 const { cups, addCup } = useCups();
@@ -213,10 +218,6 @@ const tiltAngle = computed(() => {
   return (deviceOrientation.value.gamma.value || 0) * -0.5;
 });
 const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
-
-onMounted(() => {
-  requestNotificationPermission();
-});
 </script>
 
 <template>
