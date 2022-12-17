@@ -11,8 +11,30 @@ export default defineConfig({
     // basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
+      // devOptions: {
+      //   enabled: true,
+      // },
+      includeAssets: [
+        "favicon.ico",
+        "logo-dark.svg",
+        "logo-light.svg",
+        "logo.svg",
+      ],
+      manifest: {
+        name: "woah!",
+        short_name: "woah!",
+        description: "A little app to help you stay hydrated.",
+        theme_color: "#4338ca",
+        background_color: "#18181b",
+        icons: [
+          {
+            src: "logo.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+        ],
+        display: "standalone",
       },
     }),
   ],
