@@ -328,7 +328,10 @@ const navigateToDate = (date: dayjs.Dayjs) => {
             transform: `rotate(${exptectedAmountRotation}deg)`,
           }"
         >
-          <div class="absolute top-1/2 -translate-y-1/2 -right-6 -rotate-90">
+          <div
+            class="absolute top-1/2 -translate-y-1/2 -right-6 -rotate-90"
+            title="Expected amount right now"
+          >
             <TriangleIcon
               class="w-[15px] h-[15px] text-black dark:text-white stroke-none fill-current"
               :class="{
