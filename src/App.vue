@@ -513,7 +513,13 @@ const navigateToDate = (date: dayjs.Dayjs) => {
         @click="isShowingHistory = !isShowingHistory"
         class="flex w-full items-center justify-between mt-10 mb-2"
       >
-        <h3 class="font-extrabold text-lg">Drinks you had today</h3>
+        <h3 class="font-extrabold text-lg">
+          Drinks you had
+          <span v-if="date.isToday()">today</span>
+          <UseTimeAgo v-else v-slot="{ timeAgo }" :time="date.toDate()">
+            {{ timeAgo }}
+          </UseTimeAgo>
+        </h3>
         <div>
           <ChevronDownIcon
             class="h-5 w-5 stroke-[3px] transition"
