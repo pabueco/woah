@@ -9,6 +9,7 @@ import {
   useMediaQuery,
   useStorage,
   useTransition,
+  useWindowFocus,
 } from "@vueuse/core";
 import { useClamp } from "@vueuse/math";
 import Modal from "./components/Modal.vue";
@@ -29,12 +30,14 @@ import { useDrinks } from "./composables/drinks";
 import { useCups } from "./composables/cups";
 import { useContents } from "./composables/contents";
 import { mapRange } from "./utils";
+import { getDateWithCurrentTime, dayjs } from "./utils/date";
 import { DrinkData } from "./types";
 import { uniqueId } from "lodash-es";
 import {
   PING_DURATION,
   MAX_TILT_ANGLE,
   EVENT_DELETED_EVERYTHING,
+  MINUTE_IN_MS,
 } from "./constants";
 import { useSettings } from "./composables/settings";
 import { useHydrateReminder } from "./composables/reminder";
@@ -44,6 +47,16 @@ import Settings from "./components/Settings.vue";
 import NotificationInfo from "./components/NotificationInfo.vue";
 
 const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+const lastUsedAt = useStorage("last-used-at", dayjs(), localStorage, {
+  serializer: {
+    read: (v: any) => (v ? dayjs(v) : null),
+    write: (v: dayjs.Dayjs) => v.toISOString(),
+  },
+});
+const updateLastUsedAt = () => {
+  lastUsedAt.value = dayjs();
+};
 
 const eventDeletedEverything = useEventBus(EVENT_DELETED_EVERYTHING);
 eventDeletedEverything.on(() => {
@@ -77,6 +90,7 @@ const {
 tryOnMounted(() => {
   requestNotificationPermission();
   runReminder();
+  updateLastUsedAt();
 });
 
 const { settings } = useSettings();
@@ -218,6 +232,32 @@ const tiltAngle = computed(() => {
   return (deviceOrientation.value.gamma.value || 0) * -0.5;
 });
 const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
+
+// Update the current time every minute.
+useIntervalFn(() => {
+  setDate(getDateWithCurrentTime(date));
+}, MINUTE_IN_MS);
+
+// Update the current time when the window is focused again.
+const windowFocused = useWindowFocus();
+watch(windowFocused, (focused) => {
+  if (!focused) return;
+
+  if (
+    !lastUsedAt.value ||
+    lastUsedAt.value.startOf("day").isBefore(dayjs().startOf("day"))
+  ) {
+    setDate(dayjs());
+  } else {
+    setDate(getDateWithCurrentTime(date));
+  }
+
+  updateLastUsedAt();
+});
+
+const navigateToDate = (date: dayjs.Dayjs) => {
+  setDate(getDateWithCurrentTime(date));
+};
 </script>
 
 <template>
@@ -260,13 +300,13 @@ const waterTilt = useClamp(tiltAngle, -MAX_TILT_ANGLE, MAX_TILT_ANGLE);
     <div class="flex items-center mb-10">
       <button
         class="order-first px-2 py-5 -ml-2"
-        @click="setDate(date.subtract(1, 'day'))"
+        @click="navigateToDate(date.subtract(1, 'day'))"
       >
         <ChevronLeftIcon class="w-6 h-6 stroke-[3px]" />
       </button>
       <button
         class="order-last px-2 py-5 [&:disabled]:opacity-25 -mr-2"
-        @click="setDate(date.add(1, 'day'))"
+        @click="navigateToDate(date.add(1, 'day'))"
         :disabled="date.isToday()"
       >
         <ChevronRightIcon class="w-6 h-6 stroke-[3px]" />

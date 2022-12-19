@@ -1,7 +1,7 @@
 import { useEventBus, useStorage } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { Drink, DrinkData } from "../types";
-import { dayjs } from "../utils/date";
+import { dayjs, getDateWithCurrentTime } from "../utils/date";
 import { useSettings } from "./settings";
 import { useCups } from "./cups";
 import { useContents } from "./contents";
@@ -92,7 +92,7 @@ export function useDrinks() {
       contentId: drink.contentId || contents.value[0].id,
       cupId: drink.cupId,
       amount: drink.amount || cup.amount || 0,
-      date: date.value.toISOString(),
+      date: getDateWithCurrentTime(date).toISOString(),
     };
     rawDrinks.value.push(newDrink);
     onAddDrink.emit(enrichDrink(newDrink));
